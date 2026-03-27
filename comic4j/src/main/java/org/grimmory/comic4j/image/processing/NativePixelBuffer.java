@@ -27,14 +27,14 @@ public final class NativePixelBuffer implements AutoCloseable {
     this.pixels = pixels;
     this.width = width;
     this.height = height;
-    this.pixelCount = width * height;
+    this.pixelCount = Math.multiplyExact(width, height);
   }
 
   /** Creates a new buffer from a BufferedImage, copying pixel data to off-heap memory. */
   public static NativePixelBuffer fromImage(BufferedImage image) {
     int w = image.getWidth();
     int h = image.getHeight();
-    int count = w * h;
+    int count = Math.multiplyExact(w, h);
 
     Arena arena = Arena.ofConfined();
     try {
@@ -54,7 +54,7 @@ public final class NativePixelBuffer implements AutoCloseable {
 
   /** Creates an empty buffer of the given dimensions. */
   public static NativePixelBuffer allocate(int width, int height) {
-    int count = width * height;
+    int count = Math.multiplyExact(width, height);
     Arena arena = Arena.ofConfined();
     try {
       MemorySegment pixels = arena.allocate((long) count * Integer.BYTES);

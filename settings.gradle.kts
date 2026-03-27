@@ -7,13 +7,12 @@ plugins {
 
 nmcpSettings {
     centralPortal {
-        username = providers.gradleProperty("centralPortalUsername")
-            .orElse(providers.environmentVariable("CENTRAL_PORTAL_USERNAME"))
+        username = providers.gradleProperty("sonatypeUsername")
+            .orElse(providers.environmentVariable("SONATYPE_USERNAME"))
             .getOrElse("")
-        password = providers.gradleProperty("centralPortalPassword")
-            .orElse(providers.environmentVariable("CENTRAL_PORTAL_PASSWORD"))
+        password = providers.gradleProperty("sonatypePassword")
+            .orElse(providers.environmentVariable("SONATYPE_PASSWORD"))
             .getOrElse("")
-        // Uploads are automatically released without manual confirmation
         publishingType = "AUTOMATIC"
     }
 }

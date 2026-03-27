@@ -31,10 +31,13 @@ public final class SecureXmlParser {
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
     factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
 
+    // Disable XInclude processing
+    factory.setXIncludeAware(false);
+
     // Disable entity reference expansion
     factory.setExpandEntityReferences(false);
 
-    // Namespace-aware for proper element handling
+    // Namespace-unaware: ComicInfo.xml does not use namespaces
     factory.setNamespaceAware(false);
 
     return factory.newDocumentBuilder();

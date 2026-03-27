@@ -47,6 +47,14 @@ class EntryFilterTest {
   void pathTraversal() {
     assertFalse(EntryFilter.isContentEntry("../../../etc/passwd"));
     assertFalse(EntryFilter.isContentEntry("folder/../secret.txt"));
+    assertFalse(EntryFilter.isContentEntry("..\\Windows\\System32\\config"));
+  }
+
+  @Test
+  void legitimateDoubleDotFilenames() {
+    assertTrue(EntryFilter.isContentEntry("cover..v2.jpg"));
+    assertTrue(EntryFilter.isContentEntry("file..name.png"));
+    assertTrue(EntryFilter.isContentEntry("chapter1/page..01.jpg"));
   }
 
   @Test

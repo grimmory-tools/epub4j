@@ -121,10 +121,11 @@ public final class CbcReader {
           title = deriveTitle(name);
         }
 
-        // Verify entry exists in archive
-        if (zip.getEntry(name) != null) {
-          entries.add(new CbcEntry(name, title));
+        // Verify entry exists in archive; fail fast if it does not
+        if (zip.getEntry(name) == null) {
+          throw ComicError.ERR_C041.exception(name);
         }
+        entries.add(new CbcEntry(name, title));
       }
     }
     return List.copyOf(entries);

@@ -62,7 +62,7 @@ class CbcReaderTest {
   }
 
   @Test
-  void readManifestSkipsMissingEntries() throws IOException {
+  void readManifestFailsOnMissingEntries() throws IOException {
     Path cbc =
         createCbcWithManifest(
             tempDir,
@@ -70,9 +70,7 @@ class CbcReaderTest {
             "exists.cbz:Exists\nmissing.cbz:Missing\n",
             "exists.cbz"); // only exists.cbz is in the archive
 
-    List<CbcReader.CbcEntry> entries = CbcReader.readManifest(cbc);
-    assertEquals(1, entries.size());
-    assertEquals("exists.cbz", entries.getFirst().name());
+    assertThrows(ComicException.class, () -> CbcReader.readManifest(cbc));
   }
 
   @Test

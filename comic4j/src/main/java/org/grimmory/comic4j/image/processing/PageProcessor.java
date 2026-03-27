@@ -44,21 +44,19 @@ public final class PageProcessor {
    */
   public List<BufferedImage> process(BufferedImage image) {
     try (var input = NativePixelBuffer.fromImage(image)) {
-      List<NativePixelBuffer> pages;
-
       if (options.splitLandscape() && LandscapeSplitter.isLandscape(input)) {
-        pages = LandscapeSplitter.split(input, options.readingDirection());
-      } else {
-        pages = List.of(input.subRegion(0, 0, input.width(), input.height()));
-      }
+        List<NativePixelBuffer> pages = LandscapeSplitter.split(input, options.readingDirection());
 
-      List<BufferedImage> results = new ArrayList<>(pages.size());
-      for (var page : pages) {
-        try (page) {
-          results.add(processBuffer(page));
+        List<BufferedImage> results = new ArrayList<>(pages.size());
+        for (var page : pages) {
+          try (page) {
+            results.add(processBuffer(page));
+          }
         }
+        return results;
+      } else {
+        return List.of(processBuffer(input));
       }
-      return results;
     }
   }
 
@@ -139,6 +137,9 @@ public final class PageProcessor {
    * @return processed images, one list per input page
    */
   public List<List<BufferedImage>> processBatch(List<BufferedImage> images, int maxConcurrency) {
+    if (maxConcurrency < 1) {
+      throw new IllegalArgumentException("maxConcurrency must be >= 1, got: " + maxConcurrency);
+    }
     if (images.isEmpty()) {
       return List.of();
     }

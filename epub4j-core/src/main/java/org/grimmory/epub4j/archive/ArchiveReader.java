@@ -91,7 +91,9 @@ public class ArchiveReader implements AutoCloseable {
   }
 
   /**
-   * Extracts a single named entry from the archive.
+   * Extracts a single named entry from the archive. Loads the entire entry into memory, so callers
+   * should be aware of the memory impact for large entries. For streaming access to large entries,
+   * use {@link #open(Path)} with {@link #nextEntry()} and {@link #getEntryInputStream()} instead.
    *
    * @return the entry data as a byte array, or null if the entry was not found
    */

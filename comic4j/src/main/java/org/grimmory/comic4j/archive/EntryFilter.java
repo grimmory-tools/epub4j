@@ -19,9 +19,11 @@ public final class EntryFilter {
       return false;
     }
 
-    // Reject path traversal
-    if (entryName.contains("..")) {
-      return false;
+    // Reject path traversal: any path segment equal to ".."
+    for (String segment : entryName.split("[/\\\\]+")) {
+      if ("..".equals(segment)) {
+        return false;
+      }
     }
 
     // Reject __MACOSX resource fork directory
