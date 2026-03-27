@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<package version="2.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+		<dc:title>Calibre Test Book</dc:title>
+		<dc:creator opf:role="aut">Author Name</dc:creator>
+		<dc:identifier id="BookId" opf:scheme="UUID">urn:uuid:abcdef01-2345-6789-abcd-ef0123456789</dc:identifier>
+		<dc:identifier>goodreads:12345678</dc:identifier>
+		<dc:identifier>amazon:B09CALIBRE</dc:identifier>
+		<dc:language>en</dc:language>
+
+		<meta name="calibre:series" content="Wheel of Time"/>
+		<meta name="calibre:series_index" content="5.5"/>
+		<meta name="calibre:pages" content="832"/>
+		<meta name="cover" content="cover-img"/>
+	</metadata>
+
+	<manifest>
+	</manifest>
+
+	<spine>
+	</spine>
+</package>

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<package version="2.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:opf="http://www.idpf.org/2007/opf">
+		<dc:title>Legacy Series Test Book</dc:title>
+		<dc:creator opf:role="aut">Robert Jordan</dc:creator>
+		<dc:identifier id="BookId" opf:scheme="UUID">urn:uuid:12345678-1234-1234-1234-123456789abc</dc:identifier>
+		<dc:language>en</dc:language>
+
+		<meta name="calibre:series" content="Wheel of Time"/>
+		<meta name="calibre:series_index" content="5.5"/>
+		<meta name="calibre:pages" content="832"/>
+	</metadata>
+
+	<manifest>
+	</manifest>
+
+	<spine>
+	</spine>
+</package>

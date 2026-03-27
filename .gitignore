@@ -19,22 +19,35 @@
 *.tar.gz
 *.rar
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+# Virtual machine crash logs
 hs_err_pid*
+replay_pid*
 
-# Ignore Gradle project-specific cache directory
-.gradle
+# Core dump files (native library crashes)
+core
+core.*
 
-# Ignore Gradle build output directory
-build
-/.idea/
-/test1_book1.epub
+# Gradle
+build/
 **/build/
-**/.gradle
-!**/gradle-wapper.jar
-/testbook1.epub
-/epub4j-core/src/main/java/io/documentnode/epub4j/util/GVersion.java
-/testbook1_lazy.epub
-/epub4j-core/testbook1.epub
+build_*/
+**/build_*/
+.gradle/
+**/.gradle/
+!**/gradle-wrapper.jar
 
+# IDE
+.idea/
+*.iml
+**/bin/
+
+# macOS
+.DS_Store
 **/.DS_Store
+
+# Project-specific generated files
+/epub4j-core/src/main/java/io/documentnode/epub4j/util/GVersion.java
+/epub4j-core/src/main/java/org/grimmory/epub4j/util/GVersion.java
+
+# Test output EPUBs
+*.epub

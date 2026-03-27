@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ComicInfo>
+  <Title>The Dark Night Returns</Title>
+  <Series>Batman</Series>
+  <Number>1</Number>
+  <Count>4</Count>
+  <Volume>2</Volume>
+  <AlternateSeries>Detective Comics</AlternateSeries>
+  <AlternateNumber>405</AlternateNumber>
+  <AlternateCount>500</AlternateCount>
+  <Summary>A retired Bruce Wayne dons the cape once more.</Summary>
+  <Notes>First printing. ISBN 978-1-56389-342-7</Notes>
+  <Year>1986</Year>
+  <Month>2</Month>
+  <Day>15</Day>
+  <Writer>Frank Miller</Writer>
+  <Penciller>Frank Miller</Penciller>
+  <Inker>Klaus Janson</Inker>
+  <Colorist>Lynn Varley</Colorist>
+  <Letterer>John Costanza</Letterer>
+  <CoverArtist>Frank Miller</CoverArtist>
+  <Editor>Dennis O'Neil</Editor>
+  <Translator>Jean Dupont</Translator>
+  <Publisher>DC Comics</Publisher>
+  <Imprint>Vertigo</Imprint>
+  <Genre>Superhero, Action, Drama</Genre>
+  <Tags>batman, dark knight, classic</Tags>
+  <Web>https://example.com/batman</Web>
+  <PageCount>48</PageCount>
+  <LanguageISO>en</LanguageISO>
+  <Format>TPB</Format>
+  <BlackAndWhite>No</BlackAndWhite>
+  <Manga>No</Manga>
+  <Characters>Batman, Robin, Joker, Commissioner Gordon</Characters>
+  <Teams>Justice League</Teams>
+  <Locations>Gotham City, Batcave</Locations>
+  <ScanInformation>300 DPI, cleaned</ScanInformation>
+  <StoryArc>The Dark Knight Saga</StoryArc>
+  <StoryArcNumber>1</StoryArcNumber>
+  <SeriesGroup>Batman Universe</SeriesGroup>
+  <AgeRating>Mature 17+</AgeRating>
+  <Pages>
+    <Page Image="0" Type="FrontCover" ImageSize="245760" ImageWidth="1280" ImageHeight="1920" Key="abc123"/>
+    <Page Image="1" Type="Story" ImageSize="204800" ImageWidth="1280" ImageHeight="1920"/>
+    <Page Image="2" Type="Story" ImageSize="204800" ImageWidth="1280" ImageHeight="1920"/>
+    <Page Image="3" Type="BackCover" ImageSize="245760" ImageWidth="1280" ImageHeight="1920"/>
+  </Pages>
+  <CommunityRating>4.5</CommunityRating>
+  <MainCharacterOrTeam>Batman</MainCharacterOrTeam>
+  <Review>A masterpiece of the genre.</Review>
+  <GTIN>978-1-56389-342-7</GTIN>
+  <LocalizedSeries>バットマン</LocalizedSeries>
+  <SeriesSort>Batman</SeriesSort>
+  <TitleSort>Dark Night Returns, The</TitleSort>
+</ComicInfo>

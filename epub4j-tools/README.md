@@ -4,13 +4,13 @@ A simple epub viewer built with java Swing.
 
 ### Startup
 
-	java io.documentnode.epub4j.viewer.Viewer
+	java org.grimmory.epub4j.viewer.Viewer
 
 ## Fileset2epub
 
 A tool to generate an epub from a windows help / chm file or from a set of html files.
 
-	java io.documentnode.epub4j.Fileset2Epub
+	java org.grimmory.epub4j.Fileset2Epub
 
 Arguments:
 

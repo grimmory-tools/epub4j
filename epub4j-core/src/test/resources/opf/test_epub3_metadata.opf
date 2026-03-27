@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<package version="3.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:title id="main-title">The Main Title</dc:title>
+		<dc:title id="sub-title">A Wonderful Subtitle</dc:title>
+		<meta property="title-type" refines="#main-title">main</meta>
+		<meta property="title-type" refines="#sub-title">subtitle</meta>
+
+		<dc:creator id="creator01">John Smith</dc:creator>
+		<meta property="role" refines="#creator01">aut</meta>
+
+		<dc:creator id="creator02">Jane Doe</dc:creator>
+		<meta property="role" refines="#creator02">ill</meta>
+
+		<dc:identifier id="BookId">urn:uuid:12345678-1234-1234-1234-123456789012</dc:identifier>
+		<dc:identifier>urn:isbn:9780316769488</dc:identifier>
+		<dc:identifier id="asin-id">B09TEST1234</dc:identifier>
+
+		<meta property="belongs-to-collection" id="series">The Expanse</meta>
+		<meta property="collection-type" refines="#series">series</meta>
+		<meta property="group-position" refines="#series">3</meta>
+
+		<meta property="schema:pagecount">456</meta>
+
+		<dc:language>en</dc:language>
+		<dc:publisher>Test Publisher</dc:publisher>
+		<dc:description>A test book with EPUB3 metadata</dc:description>
+		<dc:subject>Science Fiction</dc:subject>
+		<dc:date>2024-01-15</dc:date>
+	</metadata>
+
+	<manifest>
+	</manifest>
+
+	<spine>
+	</spine>
+</package>

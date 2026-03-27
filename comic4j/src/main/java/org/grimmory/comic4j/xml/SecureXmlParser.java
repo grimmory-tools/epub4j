@@ -1,0 +1,42 @@
+package org.grimmory.comic4j.xml;
+
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+/**
+ * Provides XXE-hardened XML parsing facilities. All XML parsing in comic4j must go through this
+ * class.
+ */
+public final class SecureXmlParser {
+
+  private SecureXmlParser() {}
+
+  /** Creates a DocumentBuilder with comprehensive XXE protection. */
+  public static DocumentBuilder newDocumentBuilder() throws ParserConfigurationException {
+    DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+
+    // Secure processing mode
+    factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+
+    // Disable DTDs entirely
+    factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+
+    // Disable external entities
+    factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+    factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+    // Disable external DTD/Schema loading
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+    factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+
+    // Disable entity reference expansion
+    factory.setExpandEntityReferences(false);
+
+    // Namespace-aware for proper element handling
+    factory.setNamespaceAware(false);
+
+    return factory.newDocumentBuilder();
+  }
+}

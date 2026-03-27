@@ -1,0 +1,4 @@
+# epub4j native library load order
+# List transitive dependencies before the main library.
+# Lines starting with # and blank lines are ignored.
+libepub4j_native.so
