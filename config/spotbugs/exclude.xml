@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- jextract/Panama binding classes are generated and constrained by C ABI names. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.native_parsing\.(EpubNative.*|.*Headers)" />
+    </Match>
+
+    <!-- Native FFM wrappers are constrained by external ABI/lifecycle patterns. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.native_parsing\..*" />
+    </Match>
+
+    <!-- comic4j domain objects intentionally expose mutable structures for in-place editing workflows. -->
+    <Match>
+        <Class name="~org\.grimmory\.comic4j\.domain\.(ComicBook|ComicInfo)"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Enum extension sets are immutable and safe, SpotBugs still reports representation exposure. -->
+    <Match>
+        <Class name="~org\.grimmory\.comic4j\.(archive\.ArchiveFormat|domain\.ImageFormat)"/>
+        <Bug pattern="EI_EXPOSE_REP"/>
+    </Match>
+
+    <!-- HashMap pre-indexing in extraction is intentional for O(1) lookups. -->
+    <Match>
+        <Class name="org.grimmory.comic4j.image.ImageExtractor"/>
+        <Method name="extractAllImages"/>
+        <Bug pattern="UC_USELESS_OBJECT"/>
+    </Match>
+
+    <!-- ComicInfo entry extraction may legitimately return null for missing files. -->
+    <Match>
+        <Class name="org.grimmory.comic4j.archive.ComicArchiveReader"/>
+        <Method name="readComicInfoInternal"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
+    </Match>
+
+    <!-- JMH generated sources intentionally contain unread/unused fields. -->
+    <Match>
+        <Class name="~org\.grimmory\.comic4j\.benchmarks\.jmh_generated\..*"/>
+    </Match>
+
+    <!-- JMH generated sources intentionally contain unread/unused fields. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.benchmarks\.jmh_generated\..*"/>
+    </Match>
+
+    <!-- Domain model and events intentionally expose mutable references for in-place editing workflows. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.(domain|browsersupport)\..*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,AT_STALE_THREAD_WRITE_OF_PRIMITIVE,AT_NONATOMIC_OPERATIONS_ON_SHARED_VARIABLE"/>
+    </Match>
+
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.epub\..*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.util\..*"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+
+    <!-- Legacy commons-io compatibility classes retained from upstream behavior. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.util\.commons\.io\..*"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW,AT_STALE_THREAD_WRITE_OF_PRIMITIVE,AT_NONATOMIC_OPERATIONS_ON_SHARED_VARIABLE"/>
+    </Match>
+
+    <!-- Test and sample code may intentionally use platform defaults or relaxed resource handling. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\..*(Test|Sample|SampleLazy)(\$.*)?"/>
+        <Bug pattern="DM_DEFAULT_ENCODING,DMI_RANDOM_USED_ONLY_ONCE,OBL_UNSATISFIED_OBLIGATION,RV_RETURN_VALUE_IGNORED_BAD_PRACTICE,DMI_HARDCODED_ABSOLUTE_FILENAME,HE_EQUALS_USE_HASHCODE,EQ_UNUSUAL,DLS_DEAD_LOCAL_STORE,REC_CATCH_EXCEPTION"/>
+    </Match>
+
+    <!-- Known intentional catches used for best-effort parsing/optional native fallback. -->
+    <Match>
+        <Class name="org.grimmory.epub4j.epub.BookRepair"/>
+        <Method name="isWellFormedXml"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.epub.BookRepair"/>
+        <Method name="tryNativeHtmlCleaner"/>
+        <Bug pattern="REC_CATCH_EXCEPTION"/>
+    </Match>
+
+    <!-- Known false positives around nullable/path checks in parser utility code. -->
+    <Match>
+        <Class name="org.grimmory.epub4j.epub.PackageDocumentReader"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE,NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.util.ResourceUtil"/>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE,DM_DEFAULT_ENCODING"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.epub.NavDocument"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.archive.DirectoryEpubContainer$1"/>
+        <Bug pattern="DE_MIGHT_IGNORE"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.archive.ZipLocalHeaderRecovery$RecoveredEntry"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.domain.LazyResource"/>
+        <Bug pattern="EQ_DOESNT_OVERRIDE_EQUALS,SE_BAD_FIELD"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.browsersupport.Navigator"/>
+        <Bug pattern="SE_BAD_FIELD"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.domain.Date"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.epub.EpubProcessorSupport"/>
+        <Bug pattern="MS_MUTABLE_COLLECTION_PKGPROTECT,MS_PKGPROTECT,MS_EXPOSE_REP"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.domain.MediaTypes"/>
+        <Bug pattern="MS_MUTABLE_ARRAY,MS_MUTABLE_COLLECTION_PKGPROTECT"/>
+    </Match>
+
+    <!-- Legacy tools module: mutable model/view wiring intentionally passes references. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.(search|viewer|utilities)\..*"/>
+        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2,UUF_UNUSED_FIELD,DLS_DEAD_LOCAL_STORE"/>
+    </Match>
+
+    <!-- Legacy tools constructors may throw while validating external inputs/resources. -->
+    <Match>
+        <Class name="~org\.grimmory\.epub4j\.(bookprocessor\.XslBookProcessor|utilities\.HtmlSplitter)"/>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.bookprocessor.CoverPageBookProcessor"/>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.html.htmlcleaner.XmlEventSerializer"/>
+        <Method name="next"/>
+        <Bug pattern="IT_NO_SUCH_ELEMENT"/>
+    </Match>
+
+    <Match>
+        <Class name="org.grimmory.epub4j.html.htmlcleaner.XmlSerializer"/>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+    </Match>
+</FindBugsFilter>

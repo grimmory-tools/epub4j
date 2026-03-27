@@ -1,0 +1,192 @@
+name: Build Native Classifiers
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit_to_branch:
+        description: "If true, commit built native binaries into java/src/main/resources/<classifier>/ on the selected branch"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  build-native:
+    name: ${{ matrix.classifier }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - classifier: linux-x86_64
+            runner: ubuntu-latest
+            lib_name: libepub4j_native.so
+            lib_path: epub4j-native/cpp/build/libepub4j_native.so
+            gradle_args: ""
+
+          - classifier: linux-aarch64
+            runner: ubuntu-24.04-arm
+            lib_name: libepub4j_native.so
+            lib_path: epub4j-native/cpp/build/libepub4j_native.so
+            gradle_args: ""
+
+          - classifier: macos-x86_64
+            runner: macos-15-intel
+            lib_name: libepub4j_native.dylib
+            lib_path: epub4j-native/cpp/build/libepub4j_native.dylib
+            gradle_args: ""
+
+          - classifier: macos-aarch64
+            runner: macos-14
+            lib_name: libepub4j_native.dylib
+            lib_path: epub4j-native/cpp/build/libepub4j_native.dylib
+            gradle_args: ""
+
+          - classifier: windows-x86_64
+            runner: windows-latest
+            lib_name: epub4j_native.dll
+            lib_path: epub4j-native/cpp/build/Release/epub4j_native.dll
+            gradle_args: ""
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4.7.1
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4.3.1
+
+      - name: Build native library (Unix)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          ./gradlew :epub4j-native:buildNativeRelease ${{ matrix.gradle_args }}
+
+      - name: Build native library (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          .\gradlew.bat :epub4j-native:buildNativeRelease ${{ matrix.gradle_args }}
+
+      - name: Verify expected binary exists
+        shell: bash
+        run: |
+          test -f "${{ matrix.lib_path }}"
+
+      - name: Upload classifier artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ${{ matrix.classifier }}
+          path: ${{ matrix.lib_path }}
+
+      - name: Stage in resources folder
+        shell: bash
+        run: |
+          mkdir -p "epub4j-native/java/src/main/resources/${{ matrix.classifier }}"
+          cp "${{ matrix.lib_path }}" "epub4j-native/java/src/main/resources/${{ matrix.classifier }}/${{ matrix.lib_name }}"
+
+      - name: Upload staged resource artifact
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: staged-${{ matrix.classifier }}
+          path: epub4j-native/java/src/main/resources/${{ matrix.classifier }}/${{ matrix.lib_name }}
+
+  verify-all-classifiers:
+    name: Verify all classifier folders
+    runs-on: ubuntu-latest
+    needs: build-native
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4.7.1
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4.3.1
+
+      - name: Download staged artifacts
+        if: ${{ inputs.commit_to_branch == 'true' }}
+        uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: staged-*
+          path: /tmp/staged-native
+
+      - name: Place staged binaries in resources
+        if: ${{ inputs.commit_to_branch == 'true' }}
+        shell: bash
+        run: |
+          mkdir -p epub4j-native/java/src/main/resources/linux-x86_64
+          mkdir -p epub4j-native/java/src/main/resources/linux-aarch64
+          mkdir -p epub4j-native/java/src/main/resources/macos-x86_64
+          mkdir -p epub4j-native/java/src/main/resources/macos-aarch64
+          mkdir -p epub4j-native/java/src/main/resources/windows-x86_64
+
+          cp /tmp/staged-native/staged-linux-x86_64/libepub4j_native.so epub4j-native/java/src/main/resources/linux-x86_64/libepub4j_native.so
+          cp /tmp/staged-native/staged-linux-aarch64/libepub4j_native.so epub4j-native/java/src/main/resources/linux-aarch64/libepub4j_native.so
+          cp /tmp/staged-native/staged-macos-x86_64/libepub4j_native.dylib epub4j-native/java/src/main/resources/macos-x86_64/libepub4j_native.dylib
+          cp /tmp/staged-native/staged-macos-aarch64/libepub4j_native.dylib epub4j-native/java/src/main/resources/macos-aarch64/libepub4j_native.dylib
+          cp /tmp/staged-native/staged-windows-x86_64/epub4j_native.dll epub4j-native/java/src/main/resources/windows-x86_64/epub4j_native.dll
+
+      - name: Verify classifier presence in branch
+        if: ${{ inputs.commit_to_branch == 'true' }}
+        run: ./gradlew :epub4j-native:verifyNativeClassifiers
+
+  commit-staged-binaries:
+    name: Commit staged binaries
+    runs-on: ubuntu-latest
+    needs: verify-all-classifiers
+    if: ${{ inputs.commit_to_branch == 'true' }}
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Download staged artifacts
+        uses: actions/download-artifact@v4.3.0
+        with:
+          pattern: staged-*
+          path: /tmp/staged-native
+
+      - name: Place staged binaries in resources
+        shell: bash
+        run: |
+          mkdir -p epub4j-native/java/src/main/resources/linux-x86_64
+          mkdir -p epub4j-native/java/src/main/resources/linux-aarch64
+          mkdir -p epub4j-native/java/src/main/resources/macos-x86_64
+          mkdir -p epub4j-native/java/src/main/resources/macos-aarch64
+          mkdir -p epub4j-native/java/src/main/resources/windows-x86_64
+
+          cp /tmp/staged-native/staged-linux-x86_64/libepub4j_native.so epub4j-native/java/src/main/resources/linux-x86_64/libepub4j_native.so
+          cp /tmp/staged-native/staged-linux-aarch64/libepub4j_native.so epub4j-native/java/src/main/resources/linux-aarch64/libepub4j_native.so
+          cp /tmp/staged-native/staged-macos-x86_64/libepub4j_native.dylib epub4j-native/java/src/main/resources/macos-x86_64/libepub4j_native.dylib
+          cp /tmp/staged-native/staged-macos-aarch64/libepub4j_native.dylib epub4j-native/java/src/main/resources/macos-aarch64/libepub4j_native.dylib
+          cp /tmp/staged-native/staged-windows-x86_64/epub4j_native.dll epub4j-native/java/src/main/resources/windows-x86_64/epub4j_native.dll
+
+      - name: Commit and push
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add epub4j-native/java/src/main/resources
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "ci(native): stage classifier binaries"
+          git push

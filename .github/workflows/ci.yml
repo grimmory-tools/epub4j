@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - uses: actions/setup-java@v4.7.1
+        with:
+          distribution: temurin
+          java-version: 25
+
+      - uses: gradle/actions/setup-gradle@v4.3.1
+
+      - name: Cache native build artifacts
+        uses: actions/cache@v4
+        with:
+          path: epub4j-native/cpp/build
+          key: native-${{ runner.os }}-${{ hashFiles('epub4j-native/cpp/**') }}
+          restore-keys: native-${{ runner.os }}-
+
+      - run: ./gradlew clean check --warning-mode all
+        env:
+          JAVA_TOOL_OPTIONS: "--enable-native-access=ALL-UNNAMED --enable-preview"
+
+      - uses: actions/upload-artifact@v4.6.2
+        if: always()
+        with:
+          name: test-results
+          path: '**/build/reports/tests/**'

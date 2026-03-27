@@ -1,0 +1,42 @@
+# Build output
+build/
+cpp/build/
+java/build/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+Makefile
+
+# Native libraries (build output in cpp/build/ and other locations)
+*.so
+*.so.*
+*.dylib
+*.dll
+*.lib
+*.a
+
+# CI-staged binaries in java/src/main/resources/ must be tracked for publishing
+!java/src/main/resources/**/*.so
+!java/src/main/resources/**/*.dylib
+!java/src/main/resources/**/*.dll
+
+# Test output
+test-results/
+test-reports/
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db

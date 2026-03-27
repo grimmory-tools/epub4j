@@ -9,10 +9,9 @@ import java.util.TreeSet;
 
 public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
 
-  private String outputEncoding;
+  private final String outputEncoding;
 
-  public EPUB4JXmlSerializer(CleanerProperties paramCleanerProperties,
-      String outputEncoding) {
+  public EPUB4JXmlSerializer(CleanerProperties paramCleanerProperties, String outputEncoding) {
     super(paramCleanerProperties);
     this.outputEncoding = outputEncoding;
   }
@@ -23,13 +22,15 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
 
   /**
    * Differs from the super.serializeOpenTag in that it:
+   *
    * <ul>
-   * <li>skips the xmlns:xml="xml" attribute</li>
-   * <li>if the tagNode is a meta tag setting the contentType then it sets the encoding to the actual encoding</li>
+   *   <li>skips the xmlns:xml="xml" attribute
+   *   <li>if the tagNode is a meta tag setting the contentType then it sets the encoding to the
+   *       actual encoding
    * </ul>
    */
-  protected void serializeOpenTag(TagNode tagNode, Writer writer,
-      boolean newLine) throws IOException {
+  protected void serializeOpenTag(TagNode tagNode, Writer writer, boolean newLine)
+      throws IOException {
     String tagName = tagNode.getName();
 
     if (Utils.isEmptyString(tagName)) {
@@ -44,10 +45,10 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
     String tagPrefix = Utils.getXmlNSPrefix(tagName);
     if (tagPrefix != null) {
       if (nsAware) {
-        definedNSPrefixes = new HashSet<String>();
+        definedNSPrefixes = new HashSet<>();
         tagNode.collectNamespacePrefixesOnPath(definedNSPrefixes);
         if (!definedNSPrefixes.contains(tagPrefix)) {
-          additionalNSDeclNeeded = new TreeSet<String>();
+          additionalNSDeclNeeded = new TreeSet<>();
           additionalNSDeclNeeded.add(tagPrefix);
         }
       } else {
@@ -58,24 +59,34 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
     writer.write("<" + tagName);
 
     if (isMetaContentTypeTag(tagNode)) {
-      tagNode.setAttribute("content", "text/html; charset=" + outputEncoding);
+      tagNode.getAttributes().put("content", "text/html; charset=" + outputEncoding);
     }
 
     // write attributes
     for (Map.Entry<String, String> entry : tagNode.getAttributes().entrySet()) {
       String attName = entry.getKey();
+      if ("xmlns:xml".equalsIgnoreCase(attName)) {
+        continue;
+      }
+      if ("xmlns".equalsIgnoreCase(attName)) {
+        writer.write(" xmlns=\"" + escapeXml(entry.getValue()) + "\"");
+        continue;
+      }
       String attPrefix = Utils.getXmlNSPrefix(attName);
       if (attPrefix != null) {
         if (nsAware) {
+          if ("xml".equalsIgnoreCase(attPrefix) || "xmlns".equalsIgnoreCase(attPrefix)) {
+            continue;
+          }
           // collect used namespace prefixes in attributes in order to explicitly define
           // ns declaration if needed; otherwise it would be ill-formed xml
           if (definedNSPrefixes == null) {
-            definedNSPrefixes = new HashSet<String>();
+            definedNSPrefixes = new HashSet<>();
             tagNode.collectNamespacePrefixesOnPath(definedNSPrefixes);
           }
           if (!definedNSPrefixes.contains(attPrefix)) {
             if (additionalNSDeclNeeded == null) {
-              additionalNSDeclNeeded = new TreeSet<String>();
+              additionalNSDeclNeeded = new TreeSet<>();
             }
             additionalNSDeclNeeded.add(attPrefix);
           }
@@ -93,7 +104,7 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
         for (Map.Entry<String, String> entry : nsDeclarations.entrySet()) {
           String prefix = entry.getKey();
           String att = "xmlns";
-          if (prefix.length() > 0) {
+          if (!prefix.isEmpty()) {
             att += ":" + prefix;
           }
           writer.write(" " + att + "=\"" + escapeXml(entry.getValue()) + "\"");
@@ -105,7 +116,7 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
     if (additionalNSDeclNeeded != null) {
       for (String prefix : additionalNSDeclNeeded) {
         // skip the xmlns:xml="xml" attribute
-        if (prefix.equalsIgnoreCase("xml")) {
+        if ("xml".equalsIgnoreCase(prefix)) {
           continue;
         }
         writer.write(" xmlns:" + prefix + "=\"" + prefix + "\"");
@@ -124,9 +135,8 @@ public class EPUB4JXmlSerializer extends SimpleXmlSerializer {
     }
   }
 
-  private boolean isMetaContentTypeTag(TagNode tagNode) {
-    return tagNode.getName().equalsIgnoreCase("meta")
-        && "Content-Type"
-        .equalsIgnoreCase(tagNode.getAttributeByName("http-equiv"));
+  private static boolean isMetaContentTypeTag(TagNode tagNode) {
+    String httpEquiv = tagNode.getAttributesInLowerCase().get("http-equiv");
+    return "meta".equalsIgnoreCase(tagNode.getName()) && "content-type".equalsIgnoreCase(httpEquiv);
   }
 }

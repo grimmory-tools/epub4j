@@ -26,7 +26,9 @@ release:
 	$(SDK) ./gradlew release --warning-mode all
 
 publish: build
-	rm -rf $$HOME/.m2/repository/io/documentnode/epub4j-core
+	rm -rf $$HOME/.m2/repository/org/grimmory/epub4j-core
+	rm -rf $$HOME/.m2/repository/org/grimmory/epub4j-native
+	rm -rf $$HOME/.m2/repository/org/grimmory/comic4j
 	$(SDK) ./gradlew publishToMavenLocal --warning-mode all
 
 publish-remote: publish
@@ -34,8 +36,10 @@ publish-remote: publish
 
 publish-central: publish-remote
 	@echo "Uploading staging repository to Maven Central Portal..."
-	@curl -X POST \
-		"https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/io.documentnode?publishing_type=automatic" \
-		-H "Authorization: Bearer $$(echo -n "$$SONATYPE_CENTRAL_USERNAME:$$SONATYPE_CENTRAL_PASSWORD" | base64)"
+	@if [ -z "$$SONATYPE_TOKEN_FILE" ]; then echo "SONATYPE_TOKEN_FILE is not set" >&2; exit 1; fi
+	@if [ ! -r "$$SONATYPE_TOKEN_FILE" ]; then echo "SONATYPE_TOKEN_FILE does not exist or is not readable: $$SONATYPE_TOKEN_FILE" >&2; exit 1; fi
+	@curl -fsS -X POST \
+		"https://ossrh-staging-api.central.sonatype.com/manual/upload/defaultRepository/org.grimmory?publishing_type=automatic" \
+		-H "Authorization: Bearer $$(cat "$$SONATYPE_TOKEN_FILE")"
 	@echo "\nDone. Check https://central.sonatype.com/publishing/deployments for status."
 

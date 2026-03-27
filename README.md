@@ -1,137 +1,165 @@
-﻿# epub4j
+# epub4j
 
-A java library for reading/writing/manipulating EPUB files, with improvements based on [epublib](https://github.com/psiegman/epublib).
+Java library for EPUB read, validate, repair, normalize, transform, and write workflows.
 
-Comparing to the original epublib, epub4j contains the following changes:
-* Switched to Gradle Kotlin DSL as the build tool
-* Removed the dependency of SLF4J libraries
-* Fixed issues of creating a native shared library
+## What it does
 
-It consists of 2 parts: a core that reads/writes epub and a collection of tools.
+- Read EPUB from path, stream, or resources
+- Write EPUB with package and metadata updates
+- Lazy load resources for lower memory usage
+- Validate structure, metadata, manifest, spine, references, and accessibility
+- Run diagnostics with severity, error codes, and auto fix hints
+- Auto repair common issues in malformed EPUB files
+- Prune broken TOC entries and promote valid child entries
+- Remove unreferenced JavaScript resources from manifest resources
+- Remove common non-content artifact files (iTunes metadata, authoring tool bookmarks, OS leftovers)
+- Validate EPUB mimetype entry and report strict/recover behavior
+- Normalize invalid language tags and remove stray img tags with missing src
+- Rebuild and normalize spine reading order from manifest XHTML resources
+- Reconcile spine href/idref alias drift to canonical manifest resources
+- Harden XHTML pre-parse well-formedness before downstream XML processing
+- Repair broken internal href/src/url link graph using safe alias rewrite heuristics
+- Generate KOReader-compatible partial MD5 checksums for dedupe/progress-sync IDs
+- Normalize mixed encodings to UTF-8
+- Normalize metadata fields and infer missing metadata
+- Detect cover and synthesize missing table of contents
+- Manipulate spine and split or merge XHTML
+- Run search and replace across content resources
+- Estimate word count
+- Deduplicate resources
+- Convert to kepub
 
-The tools contain an epub cleanup tool, a tool to create epubs from html files, a tool to create an epub from an uncompress html file. It also contains a swing-based epub viewer.
+## Reliability and safety
 
-![EPUB4J viewer](doc/Alice%E2%80%99s-Adventures-in-Wonderland_2011-01-30_18-17-30.png)
+- Strict and recover processing modes
+- Archive path traversal protection
+- Duplicate entry detection
+- Archive level byte budget
+- Per entry byte budget
+- Total uncompressed byte budget
+- Bounded stream copy for input streams
+- Case stable path deduplication using Locale.ROOT
 
-The core runs both on android and a standard java environment. The tools run only on a standard java environment.
-
-This means that reading/writing epub files works on Android.
-
-Maintained by [Document Node](https://documentnode.io).
-
-## Build status
-
-[![MiniLog Actions Status](https://github.com/documentnode/epub4j/workflows/Java%20CI%20with%20Gradle/badge.svg)](https://github.com/documentnode/epub4j/actions)
-
-[![Travis Build Status](https://travis-ci.org/documentnode/epub4j.svg?branch=main)](https://travis-ci.org/documentnode/epub4j)
-
-## Command line examples
-
-Set the author of an existing epub
-
-```bash
-make build
-cd epub4j-tools/build/libs
-java -jar epub4j-tools-4.3-SNAPSHOT-all.jar --in input.epub --out result.epub --author Tester,Joe
-```
-
-Set the cover image of an existing epub
-
-```bash
-make build
-cd epub4j-tools/build/libs
-java -jar epub4j-tools-4.3-SNAPSHOT-all.jar --in input.epub --out result.epub --cover-image my_cover.jpg
-```
-
-## Creating an epub programmatically
+## Quick start
 
 ```java
-package io.documentnode.epub4j.examples;
+import org.grimmory.epub4j.domain.Book;
+import org.grimmory.epub4j.epub.EpubProcessingPolicy;
+import org.grimmory.epub4j.epub.EpubReader;
 
-import java.io.InputStream;
-import java.io.FileOutputStream;
+EpubProcessingPolicy policy = EpubProcessingPolicy.defaultPolicy()
+    .withMaxArchiveBytes(256L * 1024 * 1024)
+    .withMaxEntryBytes(32L * 1024 * 1024)
+    .withMaxTotalUncompressedBytes(512L * 1024 * 1024);
 
-import io.documentnode.epub4j.domain.Author;
-import io.documentnode.epub4j.domain.Book;
-import io.documentnode.epub4j.domain.Metadata;
-import io.documentnode.epub4j.domain.Resource;
-import io.documentnode.epub4j.domain.TOCReference;
+EpubReader reader = new EpubReader(null, policy);
+Book book = reader.readEpub(java.nio.file.Path.of("book.epub"));
+```
 
-import io.documentnode.epub4j.epub.EpubWriter;
+## Strict mode
 
-public class Translator {
-  private static InputStream getResource( String path ) {
-    return Translator.class.getResourceAsStream( path );
-  }
+```java
+import org.grimmory.epub4j.epub.EpubProcessingPolicy;
+import org.grimmory.epub4j.epub.EpubReader;
 
-  private static Resource getResource( String path, String href ) {
-    return new Resource( getResource( path ), href );
-  }
+EpubReader reader = new EpubReader(null, EpubProcessingPolicy.strictPolicy());
+var book = reader.readEpubStrict(java.nio.file.Path.of("book.epub"));
+```
 
-  public static void main(String[] args) {
-    try {
-      // Create new Book
-      Book book = new Book();
-      Metadata metadata = book.getMetadata();
+## Recover mode report
 
-      // Set the title
-      metadata.addTitle("EPUB4J test book 1");
+```java
+import org.grimmory.epub4j.epub.EpubReader;
 
-      // Add an Author
-      metadata.addAuthor(new Author("Joe", "Tester"));
+EpubReader reader = new EpubReader();
+EpubReader.ReadResult result = reader.readEpubWithReport(java.nio.file.Path.of("book.epub"));
 
-      // Set cover image
-      book.setCoverImage(
-        getResource("/book1/test_cover.png", "cover.png"));
+if (result.report().hasWarnings()) {
+    result.report().warnings().forEach(w ->
+        System.out.println(w.code() + ": " + w.message())
+    );
+}
 
-      // Add Chapter 1
-      book.addSection("Introduction",
-        getResource("/book1/chapter1.html", "chapter1.html"));
-
-      // Add css file
-      book.getResources().add(
-        getResource("/book1/book1.css", "book1.css"));
-
-      // Add Chapter 2
-      TOCReference chapter2 = book.addSection( "Second Chapter",
-        getResource("/book1/chapter2.html", "chapter2.html"));
-
-      // Add image used by Chapter 2
-      book.getResources().add(
-        getResource("/book1/flowers_320x240.jpg", "flowers.jpg"));
-
-      // Add Chapter2, Section 1
-      book.addSection(chapter2, "Chapter 2, section 1",
-        getResource("/book1/chapter2_1.html", "chapter2_1.html"));
-
-      // Add Chapter 3
-      book.addSection("Conclusion",
-        getResource("/book1/chapter3.html", "chapter3.html"));
-
-      // Create EpubWriter
-      EpubWriter epubWriter = new EpubWriter();
-
-      // Write the Book as Epub
-      epubWriter.write(book, new FileOutputStream("test1_book1.epub"));
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
+if (result.report().hasCorrections()) {
+    result.report().corrections().forEach(System.out::println);
 }
 ```
 
-## Usage in Android
+## Advanced repair pass
 
-Add the following lines to your `app` module's `build.gradle` file:
+`BookRepair` now includes a stricter cleanup pass for XHTML content:
 
-```groovy
-repositories {
-  mavenCentral()
-}
+- Guarded lowercasing of legacy HTML tag and attribute names in XHTML resources
+- Preservation of namespaced attributes (for example `xlink:href`)
+- Removal of Adobe DRM meta markers and inline script artifacts
+- Pruning of broken TOC references against actual XHTML resources
+- Optional JavaScript resource pruning when files are no longer referenced
+- Removal of common non-content artifact files
+- Mimetype validation with strict failure or recover-mode warnings
+- Language tag normalization and stray `<img>` cleanup
+- Ebooklib-style spine normalization: drop invalid/duplicate/non-XHTML spine refs and append missing XHTML content docs
+- Manifest/spine alias reconciliation for href/idref drift in mixed-encoding paths
+- XHTML pre-parse hardening inspired by html5lib/lxml/xmllint defensive parsing workflows
+- Link graph repair pass for broken internal href/src/url targets with conservative rewrites
 
-dependencies {
-  implementation('io.documentnode:epub4j-core:4.2.1') {
-    exclude group: 'xmlpull'
-  }
-}
+```java
+import org.grimmory.epub4j.epub.BookRepair;
+
+BookRepair repair = new BookRepair();
+BookRepair.RepairResult repaired = repair.repair(book);
+
+repaired.actions().forEach(a ->
+    System.out.println(a.code() + " -> " + a.description())
+);
+```
+
+## KOReader-compatible checksum
+
+Ported from CWA/KOReader checksum behavior for lightweight file identity workflows:
+
+```java
+import org.grimmory.epub4j.util.KoReaderChecksum;
+
+var byPath = KoReaderChecksum.calculate(java.nio.file.Path.of("book.epub"));
+var byBytes = KoReaderChecksum.calculate(epubBytes);
+```
+
+## Roadmap
+
+- Broken link validation and auto-repair for guide, TOC, and in-document href/src
+- Unused CSS and unused image detection/removal
+- OPF metadata schema cleanup and stronger namespace normalization
+- Optional OPF2 to OPF3 upgrade helpers with nav document regeneration
+- Batch/background job execution API for large repair/validation runs
+- Metadata backup snapshot export and restore hooks
+- Ingest-safe MIME/content sniffing beyond extension checks
+- Optional duplicate detection heuristics for library hygiene
+
+## Build
+
+```bash
+./gradlew build
+```
+
+## Runtime And Toolchain Requirements
+
+- Java 25
+- JVM flags for preview and native interop paths:
+
+```text
+--enable-preview --enable-native-access=ALL-UNNAMED
+```
+
+## Quality Workflow
+
+Run the verification path used by CI:
+
+```bash
+./gradlew check --warning-mode all
+```
+
+For focused module checks while iterating:
+
+```bash
+./gradlew :comic4j:check
 ```

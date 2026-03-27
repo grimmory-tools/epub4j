@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<package version="3.0" unique-identifier="BookId" xmlns="http://www.idpf.org/2007/opf">
+	<metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+		<dc:title>Page Count Variants</dc:title>
+		<dc:identifier id="BookId">urn:uuid:00000000-0000-0000-0000-000000000001</dc:identifier>
+		<dc:language>en</dc:language>
+
+		<meta property="media:pagecount">320</meta>
+	</metadata>
+
+	<manifest>
+	</manifest>
+
+	<spine>
+	</spine>
+</package>
