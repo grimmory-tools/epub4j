@@ -56,16 +56,16 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4.7.1
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: temurin
           java-version: '25'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4.3.1
+        uses: gradle/actions/setup-gradle@v6.0.1
 
       - name: Build native library (Unix)
         if: runner.os != 'Windows'
@@ -85,7 +85,7 @@ jobs:
           test -f "${{ matrix.lib_path }}"
 
       - name: Upload classifier artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: ${{ matrix.classifier }}
           path: ${{ matrix.lib_path }}
@@ -97,7 +97,7 @@ jobs:
           cp "${{ matrix.lib_path }}" "epub4j-native/java/src/main/resources/${{ matrix.classifier }}/${{ matrix.lib_name }}"
 
       - name: Upload staged resource artifact
-        uses: actions/upload-artifact@v4.6.2
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: staged-${{ matrix.classifier }}
           path: epub4j-native/java/src/main/resources/${{ matrix.classifier }}/${{ matrix.lib_name }}
@@ -108,20 +108,20 @@ jobs:
     needs: build-native
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Set up JDK 25
-        uses: actions/setup-java@v4.7.1
+        uses: actions/setup-java@v5.2.0
         with:
           distribution: temurin
           java-version: '25'
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4.3.1
+        uses: gradle/actions/setup-gradle@v6.0.1
 
       - name: Download staged artifacts
         if: ${{ inputs.commit_to_branch == 'true' }}
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@v8.0.1
         with:
           pattern: staged-*
           path: /tmp/staged-native
@@ -155,10 +155,10 @@ jobs:
       contents: write
     steps:
       - name: Checkout
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v6.0.2
 
       - name: Download staged artifacts
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@v8.0.1
         with:
           pattern: staged-*
           path: /tmp/staged-native
