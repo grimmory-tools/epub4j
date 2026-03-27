@@ -97,7 +97,7 @@ subprojects {
         }
         java {
             target("src/*/java/**/*.java")
-            targetExclude("**/build/**", "**/util/GVersion.java")
+            targetExclude("**/build/**", "**/cpp/**", "**/util/GVersion.java")
             googleJavaFormat("1.35.0")
             removeUnusedImports()
             trimTrailingWhitespace()

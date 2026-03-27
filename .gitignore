@@ -58,5 +58,7 @@ epub4j-native/java/src/main/resources/macos-*/
 epub4j-native/java/src/main/resources/windows-*/
 
 # CMake build artifacts (native C++ build)
+epub4j-native/cpp/build
 epub4j-native/cpp/build/
-epub4j-native/cpp/build.old/
+epub4j-native/cpp/build*/
+epub4j-native/cpp/build*
