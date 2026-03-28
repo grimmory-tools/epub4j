@@ -4,6 +4,12 @@ plugins {
     alias(libs.plugins.spotbugs) apply false
 }
 
+// nmcp (settings plugin) injects a :nmcpTasks configuration into the root project;
+// it needs a repository to resolve com.gradleup.nmcp:nmcp-tasks at task execution time.
+repositories {
+    mavenCentral()
+}
+
 scmVersion {
     repository {
         type.set("git")
