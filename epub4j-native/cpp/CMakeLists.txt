@@ -25,18 +25,19 @@ if(NOT EPUB4J_NATIVE_BUILD_SHARED AND NOT EPUB4J_NATIVE_BUILD_STATIC)
     message(FATAL_ERROR "Invalid build configuration: one of EPUB4J_NATIVE_BUILD_SHARED or EPUB4J_NATIVE_BUILD_STATIC must be enabled")
 endif()
 
-# Compiler warnings and hardening flags
+# Compiler warnings and hardening flags (applied to epub4j_native target only, not dependencies)
+# Stored in variables here; applied via target_compile_options() after the target is created.
 if(MSVC)
-    add_compile_options(/W4 /WX-)
+    set(EPUB4J_NATIVE_COMPILE_FLAGS /W4 /WX-)
 else()
-    add_compile_options(
+    set(EPUB4J_NATIVE_COMPILE_FLAGS
         -Wall -Wextra -Wpedantic
         -Wformat=2 -Wformat-security
         -Wconversion -Wsign-conversion
         -fstack-protector-strong
     )
     if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        add_compile_options(-O1)
+        list(APPEND EPUB4J_NATIVE_COMPILE_FLAGS -O1)
         add_compile_definitions(_FORTIFY_SOURCE=2)
     endif()
     if(UNIX AND NOT APPLE)
@@ -228,6 +229,8 @@ if(EPUB4J_NATIVE_BUILD_SHARED)
 elseif(EPUB4J_NATIVE_BUILD_STATIC)
     add_library(epub4j_native STATIC ${EPUB4J_NATIVE_SOURCES} ${GUMBO_SOURCES})
 endif()
+
+target_compile_options(epub4j_native PRIVATE ${EPUB4J_NATIVE_COMPILE_FLAGS})
 
 target_include_directories(epub4j_native
     PUBLIC

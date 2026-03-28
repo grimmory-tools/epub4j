@@ -99,11 +99,9 @@ public class PackageDocumentReader extends PackageDocumentBase {
   /**
    * Reads the manifest containing the resource ids, hrefs and mediatypes.
    *
-   * @param packageDocument
-   * @param packageHref
-   * @param epubReader
-   * @param resources
-   * @param idMapping
+   * @param packageDocument the OPF package document
+   * @param resources the loaded resources
+   * @param idMapping output map for id remapping
    * @return a Map with resources, with their id's as key.
    */
   private static Resources readManifest(
@@ -156,10 +154,9 @@ public class PackageDocumentReader extends PackageDocumentBase {
   /**
    * Reads the book's guide. Here some more attempts are made at finding the cover page.
    *
-   * @param packageDocument
-   * @param epubReader
-   * @param book
-   * @param resources
+   * @param packageDocument the OPF package document
+   * @param book the book being built
+   * @param resources the loaded resources
    */
   private static void readGuide(Document packageDocument, Book book, Resources resources) {
     Element guideElement =
@@ -482,11 +479,10 @@ public class PackageDocumentReader extends PackageDocumentBase {
 
   /**
    * Finds the cover resource in the packageDocument and adds it to the book if found. Keeps the
-   * cover resource in the resources map
+   * cover resource in the resources map.
    *
-   * @param packageDocument
-   * @param book
-   * @param resources
+   * @param packageDocument the OPF package document
+   * @param book the book being built
    */
   private static void readCover(Document packageDocument, Book book) {
 

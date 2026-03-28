@@ -105,8 +105,7 @@ public interface BookMetadata {
   /**
    * Format-specific raw metadata object. Cast to the appropriate type for format-specific access.
    *
-   * @return the raw metadata object (e.g., {@link Metadata} for EPUB, {@link
-   *     org.pdfium4j.model.XmpMetadata} for PDF)
+   * @return the raw metadata object (e.g., {@link Metadata} for EPUB)
    */
   Object rawMetadata();
 

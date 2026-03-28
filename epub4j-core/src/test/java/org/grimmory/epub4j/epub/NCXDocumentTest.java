@@ -14,19 +14,10 @@ public class NCXDocumentTest {
 
   byte[] ncxData;
 
-  @BeforeAll
-  public static void setUpClass() {}
-
-  @AfterAll
-  public static void tearDownClass() {}
-
   @BeforeEach
   public void setUp() throws IOException {
     ncxData = IOUtil.toByteArray(new FileInputStream("src/test/resources/toc.xml"));
   }
-
-  @AfterEach
-  public void tearDown() {}
 
   private static void addResource(Book book, String filename) {
     Resource chapterResource =

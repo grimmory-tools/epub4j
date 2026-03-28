@@ -49,7 +49,6 @@ jmh-generator-annprocess = { module = "org.openjdk.jmh:jmh-generator-annprocess"
 gversion = { id = "com.peterabeles.gversion", version.ref = "gversion-plugin" }
 shadow = { id = "com.gradleup.shadow", version.ref = "shadow-plugin" }
 axion-release = { id = "pl.allegro.tech.build.axion-release", version.ref = "axion-release-plugin" }
-foojay-resolver = { id = "org.gradle.toolchains.foojay-resolver-convention", version = "1.0.0" }
 jmh = { id = "me.champeau.jmh", version.ref = "jmh-plugin" }
 spotless = { id = "com.diffplug.spotless", version.ref = "spotless-plugin" }
 spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs-plugin" }

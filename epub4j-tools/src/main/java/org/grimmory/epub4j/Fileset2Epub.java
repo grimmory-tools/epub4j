@@ -40,6 +40,9 @@ public class Fileset2Epub {
     List<String> bookProcessorClassNames = new ArrayList<>();
 
     for (int i = 0; i < args.length; i++) {
+      if (i + 1 >= args.length) {
+        break;
+      }
       if ("--in".equalsIgnoreCase(args[i])) {
         inputLocation = args[++i];
       } else if ("--out".equalsIgnoreCase(args[i])) {

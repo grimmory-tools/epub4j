@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseWheelEvent;
 import java.awt.event.MouseWheelListener;
+import java.awt.geom.Rectangle2D;
 import java.io.Serial;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -139,18 +140,16 @@ public class ContentPane extends JPanel implements NavigationEventListener, Hype
   }
 
   /**
-   * Scrolls the editorPane to the startOffset of the current element in the elementIterator
+   * Scrolls the editorPane to the startOffset of the current element in the elementIterator.
    *
-   * @param requestFragmentId
-   * @param attributeValue
-   * @param editorPane
-   * @param elementIterator
-   * @return whether it was a match and we jumped there.
+   * @param editorPane the editor pane to scroll
+   * @param elementIterator the element iterator pointing to the target element
    */
   private static void scrollToElement(
       JEditorPane editorPane, HTMLDocument.Iterator elementIterator) {
     try {
-      Rectangle rectangle = editorPane.modelToView(elementIterator.getStartOffset());
+      Rectangle2D rectangle2D = editorPane.modelToView2D(elementIterator.getStartOffset());
+      Rectangle rectangle = rectangle2D != null ? rectangle2D.getBounds() : null;
       if (rectangle == null) {
         return;
       }

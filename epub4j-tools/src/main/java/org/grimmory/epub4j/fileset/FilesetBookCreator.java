@@ -52,7 +52,7 @@ public class FilesetBookCreator {
   /**
    * Recursively adds all files that are allowed to be part of an epub to the Book.
    *
-   * @see org.grimmory.epub4j.domain.MediaTypeService
+   * @see org.grimmory.epub4j.domain.MediaTypes
    * @param rootDirectory
    * @return the newly created Book
    * @throws IOException
