@@ -43,36 +43,27 @@ Java library for EPUB read, validate, repair, normalize, transform, and write wo
 ## Quick start
 
 ```java
-import org.grimmory.epub4j.domain.Book;
-import org.grimmory.epub4j.epub.EpubProcessingPolicy;
-import org.grimmory.epub4j.epub.EpubReader;
-
 EpubProcessingPolicy policy = EpubProcessingPolicy.defaultPolicy()
     .withMaxArchiveBytes(256L * 1024 * 1024)
     .withMaxEntryBytes(32L * 1024 * 1024)
     .withMaxTotalUncompressedBytes(512L * 1024 * 1024);
 
 EpubReader reader = new EpubReader(null, policy);
-Book book = reader.readEpub(java.nio.file.Path.of("book.epub"));
+Book book = reader.readEpub(Path.of("book.epub"));
 ```
 
 ## Strict mode
 
 ```java
-import org.grimmory.epub4j.epub.EpubProcessingPolicy;
-import org.grimmory.epub4j.epub.EpubReader;
-
 EpubReader reader = new EpubReader(null, EpubProcessingPolicy.strictPolicy());
-var book = reader.readEpubStrict(java.nio.file.Path.of("book.epub"));
+var book = reader.readEpubStrict(Path.of("book.epub"));
 ```
 
 ## Recover mode report
 
 ```java
-import org.grimmory.epub4j.epub.EpubReader;
-
 EpubReader reader = new EpubReader();
-EpubReader.ReadResult result = reader.readEpubWithReport(java.nio.file.Path.of("book.epub"));
+EpubReader.ReadResult result = reader.readEpubWithReport(Path.of("book.epub"));
 
 if (result.report().hasWarnings()) {
     result.report().warnings().forEach(w ->
@@ -103,8 +94,6 @@ if (result.report().hasCorrections()) {
 - Link graph repair pass for broken internal href/src/url targets with conservative rewrites
 
 ```java
-import org.grimmory.epub4j.epub.BookRepair;
-
 BookRepair repair = new BookRepair();
 BookRepair.RepairResult repaired = repair.repair(book);
 
@@ -115,12 +104,10 @@ repaired.actions().forEach(a ->
 
 ## KOReader-compatible checksum
 
-Ported from CWA/KOReader checksum behavior for lightweight file identity workflows:
+Ported from KOReader checksum behavior for lightweight file identity workflows:
 
 ```java
-import org.grimmory.epub4j.util.KoReaderChecksum;
-
-var byPath = KoReaderChecksum.calculate(java.nio.file.Path.of("book.epub"));
+var byPath = KoReaderChecksum.calculate(Path.of("book.epub"));
 var byBytes = KoReaderChecksum.calculate(epubBytes);
 ```
 
