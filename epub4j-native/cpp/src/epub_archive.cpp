@@ -360,6 +360,64 @@ EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry(
     }
 }
 
+EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry_to_callback(
+    EpubNativeArchive* archive_wrapper,
+    const char* entry_path,
+    epub_native_archive_read_callback callback,
+    void* user_data
+) {
+    if (!archive_wrapper || !entry_path || !callback) {
+        set_error("Invalid argument: null pointer");
+        return EPUB_NATIVE_ERROR_INVALID_ARG;
+    }
+
+    try {
+        std::string reopen_error;
+        if (!reopen_archive(archive_wrapper, reopen_error)) {
+            set_error(reopen_error.c_str());
+            return EPUB_NATIVE_ERROR_IO;
+        }
+
+        struct archive_entry* entry;
+        int r;
+        bool found = false;
+
+        while ((r = archive_read_next_header(archive_wrapper->archive, &entry)) == ARCHIVE_OK) {
+            const char* pathname = archive_entry_pathname(entry);
+            if (pathname && strcmp(pathname, entry_path) == 0) {
+                found = true;
+                break;
+            }
+            archive_read_data_skip(archive_wrapper->archive);
+        }
+
+        if (r != ARCHIVE_OK || !found) {
+            set_error("Entry not found in archive");
+            return EPUB_NATIVE_ERROR_NOT_FOUND;
+        }
+
+        const void* buff;
+        size_t size;
+        la_int64_t offset;
+
+        while ((r = archive_read_data_block(
+                archive_wrapper->archive, &buff, &size, &offset)) == ARCHIVE_OK) {
+            callback(buff, size, user_data);
+        }
+
+        if (r != ARCHIVE_EOF) {
+            set_error(archive_error_string(archive_wrapper->archive));
+            return EPUB_NATIVE_ERROR_IO;
+        }
+
+        return EPUB_NATIVE_SUCCESS;
+
+    } catch (...) {
+        set_error("Unknown error reading archive entry via callback");
+        return EPUB_NATIVE_ERROR_IO;
+    }
+}
+
 EPUB_NATIVE_API EpubNativeError epub_native_archive_entry_exists(
     EpubNativeArchive* archive_wrapper,
     const char* entry_path

@@ -27,6 +27,78 @@ public class CoverDetector {
       Pattern.compile(
           "<image[^>]+(?:href|xlink:href)\\s*=\\s*[\"']([^\"']+)[\"']", Pattern.CASE_INSENSITIVE);
 
+  /** Describes how a cover image was detected. */
+  public enum DetectionMethod {
+    /** Cover was already set on the Book (from OPF metadata or properties="cover-image"). */
+    OPF_METADATA,
+    /** Matched by resource id containing "cover". */
+    RESOURCE_ID,
+    /** Matched by filename containing "cover". */
+    FILENAME,
+    /** Found as first image referenced in the first spine item's XHTML. */
+    FIRST_SPINE_IMAGE,
+    /** Selected as the largest image resource in the book. */
+    LARGEST_IMAGE,
+    /** First image in the manifest (last-resort fallback). */
+    FIRST_MANIFEST_IMAGE
+  }
+
+  /**
+   * Result of cover detection, pairing the resource with how it was found. Useful for logging and
+   * for callers that want to know the detection confidence.
+   */
+  public record CoverDetectionResult(Resource resource, DetectionMethod method) {}
+
+  /**
+   * Detects the cover image with metadata about which strategy succeeded.
+   *
+   * @param book the book to detect a cover image for
+   * @return an Optional containing the detection result, or empty if no cover found
+   */
+  public static Optional<CoverDetectionResult> detectCoverImageWithMethod(Book book) {
+    if (book.getCoverImage() != null) {
+      return Optional.of(
+          new CoverDetectionResult(book.getCoverImage(), DetectionMethod.OPF_METADATA));
+    }
+
+    Resource byId = findCoverById(book.getResources());
+    if (byId != null) {
+      log.log(System.Logger.Level.DEBUG, "Cover detected by resource id: " + byId.getHref());
+      return Optional.of(new CoverDetectionResult(byId, DetectionMethod.RESOURCE_ID));
+    }
+
+    Resource byName = findCoverByName(book.getResources());
+    if (byName != null) {
+      log.log(System.Logger.Level.DEBUG, "Cover detected by filename: " + byName.getHref());
+      return Optional.of(new CoverDetectionResult(byName, DetectionMethod.FILENAME));
+    }
+
+    Resource fromSpine = findCoverFromFirstSpineItem(book);
+    if (fromSpine != null) {
+      log.log(
+          System.Logger.Level.DEBUG,
+          "Cover detected from first spine item: " + fromSpine.getHref());
+      return Optional.of(new CoverDetectionResult(fromSpine, DetectionMethod.FIRST_SPINE_IMAGE));
+    }
+
+    Resource largest = findLargestImage(book.getResources());
+    if (largest != null) {
+      log.log(System.Logger.Level.DEBUG, "Cover detected as largest image: " + largest.getHref());
+      return Optional.of(new CoverDetectionResult(largest, DetectionMethod.LARGEST_IMAGE));
+    }
+
+    Resource firstImage = findFirstManifestImage(book.getResources());
+    if (firstImage != null) {
+      log.log(
+          System.Logger.Level.DEBUG,
+          "Cover detected as first manifest image: " + firstImage.getHref());
+      return Optional.of(
+          new CoverDetectionResult(firstImage, DetectionMethod.FIRST_MANIFEST_IMAGE));
+    }
+
+    return Optional.empty();
+  }
+
   /**
    * Attempts to detect the cover image using multiple strategies. Returns null if no cover image
    * could be determined.
@@ -35,40 +107,35 @@ public class CoverDetector {
    * @return the detected cover image resource, or null
    */
   public static Resource detectCoverImage(Book book) {
-    // Each strategy is tried in order of reliability -- early strategies
-    // use explicit metadata while later ones apply heuristics.
-    return Optional.ofNullable(book.getCoverImage())
-        .or(
-            () ->
-                Optional.ofNullable(findCoverByName(book.getResources()))
-                    .map(
-                        r -> {
-                          log.log(
-                              System.Logger.Level.DEBUG,
-                              "Cover detected by filename: " + r.getHref());
-                          return r;
-                        }))
-        .or(
-            () ->
-                Optional.ofNullable(findCoverFromFirstSpineItem(book))
-                    .map(
-                        r -> {
-                          log.log(
-                              System.Logger.Level.DEBUG,
-                              "Cover detected from first spine item: " + r.getHref());
-                          return r;
-                        }))
-        .or(
-            () ->
-                Optional.ofNullable(findLargestImage(book.getResources()))
-                    .map(
-                        r -> {
-                          log.log(
-                              System.Logger.Level.DEBUG,
-                              "Cover detected as largest image: " + r.getHref());
-                          return r;
-                        }))
-        .orElse(null);
+    return detectCoverImageWithMethod(book).map(CoverDetectionResult::resource).orElse(null);
+  }
+
+  /**
+   * Find an image resource whose id contains "cover" (case-insensitive). Matches id patterns like
+   * "cover-image", "cover", "coverimg" that OPF generators commonly use.
+   */
+  private static Resource findCoverById(Resources resources) {
+    for (Resource resource : resources.getAll()) {
+      if (!isImageResource(resource)) continue;
+      String id = resource.getId();
+      if (id != null && id.toLowerCase().contains("cover")) {
+        return resource;
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Returns the first image resource found in the manifest. Last-resort fallback when all other
+   * strategies fail.
+   */
+  private static Resource findFirstManifestImage(Resources resources) {
+    for (Resource resource : resources.getAll()) {
+      if (isImageResource(resource) && resource.getSize() >= MIN_COVER_SIZE) {
+        return resource;
+      }
+    }
+    return null;
   }
 
   /**

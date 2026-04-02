@@ -16,6 +16,10 @@ option(EPUB4J_NATIVE_USE_SYSTEM_GUMBO "Use system-installed gumbo" OFF)
 option(EPUB4J_NATIVE_USE_SYSTEM_UCHARDET "Use system-installed uchardet" OFF)
 option(EPUB4J_NATIVE_USE_SYSTEM_ZLIB "Use system-installed zlib" OFF)
 option(EPUB4J_NATIVE_USE_SYSTEM_LIBARCHIVE "Use system-installed libarchive" OFF)
+option(EPUB4J_NATIVE_USE_SYSTEM_LIBJPEG_TURBO "Use system-installed libjpeg-turbo" OFF)
+option(EPUB4J_NATIVE_USE_SYSTEM_LIBPNG "Use system-installed libpng" OFF)
+option(EPUB4J_NATIVE_USE_SYSTEM_LIBWEBP "Use system-installed libwebp" OFF)
+option(EPUB4J_NATIVE_ENABLE_IMAGE_PROCESSING "Build with JPEG/PNG/WebP image processing" ON)
 
 if(EPUB4J_NATIVE_BUILD_SHARED AND EPUB4J_NATIVE_BUILD_STATIC)
     message(FATAL_ERROR "Invalid build configuration: enable only one of EPUB4J_NATIVE_BUILD_SHARED or EPUB4J_NATIVE_BUILD_STATIC")
@@ -199,6 +203,172 @@ else()
     endif()
 endif()
 
+# ============================================================================
+# Image processing dependencies (optional, controlled by EPUB4J_NATIVE_ENABLE_IMAGE_PROCESSING)
+# ============================================================================
+
+set(IMAGE_COMPILE_DEFS "")
+set(IMAGE_INCLUDE_DIRS "")
+set(IMAGE_LINK_TARGETS "")
+set(IMAGE_SOURCES "")
+
+if(EPUB4J_NATIVE_ENABLE_IMAGE_PROCESSING)
+    # --- libjpeg-turbo 3.1.3 (JPEG lossless optimization and lossy compression) ---
+    if(EPUB4J_NATIVE_USE_SYSTEM_LIBJPEG_TURBO)
+        pkg_check_modules(LIBJPEG_TURBO REQUIRED libjpeg libturbojpeg)
+        list(APPEND IMAGE_INCLUDE_DIRS ${LIBJPEG_TURBO_INCLUDE_DIRS})
+        list(APPEND IMAGE_LINK_TARGETS ${LIBJPEG_TURBO_LINK_LIBRARIES})
+    else()
+        # libjpeg-turbo prohibits add_subdirectory() integration, so we build
+        # it as a standalone project at configure time and import the results.
+        find_program(NASM_EXECUTABLE nasm)
+        if(NOT NASM_EXECUTABLE)
+            set(_LJT_SIMD_FLAG "-DWITH_SIMD=OFF")
+        else()
+            set(_LJT_SIMD_FLAG "")
+        endif()
+        FetchContent_Declare(
+            libjpeg_turbo
+            GIT_REPOSITORY https://github.com/libjpeg-turbo/libjpeg-turbo.git
+            GIT_TAG        3.1.3
+        )
+        FetchContent_Populate(libjpeg_turbo)
+        set(_LJT_INSTALL "${libjpeg_turbo_BINARY_DIR}/dist")
+        include(ProcessorCount)
+        ProcessorCount(_LJT_NCPU)
+        if(_LJT_NCPU EQUAL 0)
+            set(_LJT_NCPU 1)
+        endif()
+        execute_process(
+            COMMAND ${CMAKE_COMMAND}
+                -S "${libjpeg_turbo_SOURCE_DIR}"
+                -B "${libjpeg_turbo_BINARY_DIR}/build"
+                -G "${CMAKE_GENERATOR}"
+                -DCMAKE_BUILD_TYPE=Release
+                -DCMAKE_POSITION_INDEPENDENT_CODE=ON
+                -DCMAKE_INSTALL_PREFIX=${_LJT_INSTALL}
+                -DENABLE_SHARED=OFF
+                -DENABLE_STATIC=ON
+                -DWITH_JAVA=OFF
+                -DWITH_TURBOJPEG=ON
+                ${_LJT_SIMD_FLAG}
+            RESULT_VARIABLE _LJT_RESULT
+        )
+        if(_LJT_RESULT)
+            message(FATAL_ERROR "libjpeg-turbo configure step failed")
+        endif()
+        execute_process(
+            COMMAND ${CMAKE_COMMAND}
+                --build "${libjpeg_turbo_BINARY_DIR}/build"
+                --config Release
+                --parallel ${_LJT_NCPU}
+            RESULT_VARIABLE _LJT_RESULT
+        )
+        if(_LJT_RESULT)
+            message(FATAL_ERROR "libjpeg-turbo build step failed")
+        endif()
+        execute_process(
+            COMMAND ${CMAKE_COMMAND}
+                --install "${libjpeg_turbo_BINARY_DIR}/build"
+                --config Release
+            RESULT_VARIABLE _LJT_RESULT
+        )
+        if(_LJT_RESULT)
+            message(FATAL_ERROR "libjpeg-turbo install step failed")
+        endif()
+        # lib/ vs lib64/ varies by distro
+        if(EXISTS "${_LJT_INSTALL}/lib64/libturbojpeg.a")
+            set(_LJT_LIB_DIR "${_LJT_INSTALL}/lib64")
+        else()
+            set(_LJT_LIB_DIR "${_LJT_INSTALL}/lib")
+        endif()
+        add_library(turbojpeg-static STATIC IMPORTED GLOBAL)
+        set_target_properties(turbojpeg-static PROPERTIES
+            IMPORTED_LOCATION "${_LJT_LIB_DIR}/libturbojpeg.a"
+        )
+        add_library(jpeg-static STATIC IMPORTED GLOBAL)
+        set_target_properties(jpeg-static PROPERTIES
+            IMPORTED_LOCATION "${_LJT_LIB_DIR}/libjpeg.a"
+        )
+        list(APPEND IMAGE_INCLUDE_DIRS "${_LJT_INSTALL}/include")
+        list(APPEND IMAGE_LINK_TARGETS turbojpeg-static jpeg-static)
+    endif()
+    list(APPEND IMAGE_COMPILE_DEFS EPUB4J_NATIVE_HAS_JPEG)
+
+    # --- libpng 1.6.45 (PNG optimization) ---
+    if(EPUB4J_NATIVE_USE_SYSTEM_LIBPNG)
+        pkg_check_modules(LIBPNG REQUIRED libpng)
+        list(APPEND IMAGE_INCLUDE_DIRS ${LIBPNG_INCLUDE_DIRS})
+        list(APPEND IMAGE_LINK_TARGETS ${LIBPNG_LINK_LIBRARIES})
+    else()
+        set(PNG_SHARED OFF CACHE BOOL "" FORCE)
+        set(PNG_STATIC ON CACHE BOOL "" FORCE)
+        set(PNG_TESTS OFF CACHE BOOL "" FORCE)
+        set(PNG_TOOLS OFF CACHE BOOL "" FORCE)
+        set(PNG_FRAMEWORK OFF CACHE BOOL "" FORCE)
+        # Prevent install(EXPORT) errors from referencing zlibstatic outside the export set
+        set(SKIP_INSTALL_ALL ON CACHE BOOL "" FORCE)
+        set(PNG_INSTALL OFF CACHE BOOL "" FORCE)
+        FetchContent_Declare(
+            libpng
+            GIT_REPOSITORY https://github.com/pnggroup/libpng.git
+            GIT_TAG        v1.6.45
+        )
+        FetchContent_MakeAvailable(libpng)
+        list(APPEND IMAGE_INCLUDE_DIRS
+            ${libpng_SOURCE_DIR}
+            ${libpng_BINARY_DIR}
+        )
+        if(TARGET png_static)
+            list(APPEND IMAGE_LINK_TARGETS png_static)
+        elseif(TARGET png16_static)
+            list(APPEND IMAGE_LINK_TARGETS png16_static)
+        endif()
+    endif()
+    list(APPEND IMAGE_COMPILE_DEFS EPUB4J_NATIVE_HAS_PNG)
+
+    # --- libwebp 1.5.0 (WebP encoding and decoding) ---
+    if(EPUB4J_NATIVE_USE_SYSTEM_LIBWEBP)
+        pkg_check_modules(LIBWEBP REQUIRED libwebp)
+        list(APPEND IMAGE_INCLUDE_DIRS ${LIBWEBP_INCLUDE_DIRS})
+        list(APPEND IMAGE_LINK_TARGETS ${LIBWEBP_LINK_LIBRARIES})
+    else()
+        set(WEBP_BUILD_ANIM_UTILS OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_CWEBP OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_DWEBP OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_GIF2WEBP OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_IMG2WEBP OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_VWEBP OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_WEBPINFO OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_WEBPMUX OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+        set(WEBP_BUILD_LIBSHARPYUV ON CACHE BOOL "" FORCE)
+        FetchContent_Declare(
+            libwebp
+            GIT_REPOSITORY https://github.com/webmproject/libwebp.git
+            GIT_TAG        v1.5.0
+        )
+        FetchContent_MakeAvailable(libwebp)
+        list(APPEND IMAGE_INCLUDE_DIRS ${libwebp_SOURCE_DIR}/src)
+        if(TARGET webp)
+            list(APPEND IMAGE_LINK_TARGETS webp)
+        endif()
+    endif()
+    list(APPEND IMAGE_COMPILE_DEFS EPUB4J_NATIVE_HAS_WEBP)
+
+    # --- stb (header-only: stb_image_resize2.h for high-quality resampling) ---
+    FetchContent_Declare(
+        stb
+        GIT_REPOSITORY https://github.com/nothings/stb.git
+        GIT_TAG        f0569113c93ad095470c54bf34a17b36646bbbb5
+    )
+    FetchContent_Populate(stb)
+    list(APPEND IMAGE_INCLUDE_DIRS ${stb_SOURCE_DIR})
+
+    # Image processor source file
+    list(APPEND IMAGE_SOURCES src/image_processor.cpp)
+endif()
+
 # Source files
 set(EPUB4J_NATIVE_SOURCES
     src/epub_native.cpp
@@ -208,6 +378,7 @@ set(EPUB4J_NATIVE_SOURCES
     src/html_cleaner.cpp
     src/epub_encoding.cpp
     src/epub_archive.cpp
+    ${IMAGE_SOURCES}
 )
 
 # Include directories
@@ -216,6 +387,7 @@ set(EPUB4J_NATIVE_INCLUDES
     ${PUGIXML_INCLUDE_DIRS}
     ${GUMBO_INCLUDE_DIRS}
     ${UCHARDET_INCLUDE_DIRS}
+    ${IMAGE_INCLUDE_DIRS}
 )
 
 # Create library
@@ -244,7 +416,13 @@ target_link_libraries(epub4j_native
     ${GUMBO_LINK_LIBS}
     ${UCHARDET_LINK_TARGETS}
     ${LIBARCHIVE_LINK_TARGETS}
+    ${IMAGE_LINK_TARGETS}
 )
+
+# Image processing compile definitions (EPUB4J_NATIVE_HAS_JPEG etc.)
+if(IMAGE_COMPILE_DEFS)
+    target_compile_definitions(epub4j_native PRIVATE ${IMAGE_COMPILE_DEFS})
+endif()
 
 # iconv: part of libc on Linux/musl; link system libiconv on macOS
 if(APPLE)

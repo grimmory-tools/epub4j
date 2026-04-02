@@ -12,6 +12,10 @@ package org.grimmory.epub4j.epub;
  *
  * <p>The {@code parseTimeoutMs} setting guards against adversarial input that could cause parsing
  * to hang indefinitely.
+ *
+ * <p>When {@code useOffHeapResources} is enabled, resources exceeding {@code offHeapThresholdBytes}
+ * are stored in off-heap memory via the Foreign Function and Memory API, reducing GC pressure for
+ * large EPUBs.
  */
 public record EpubProcessingPolicy(
     Mode mode,
@@ -22,7 +26,9 @@ public record EpubProcessingPolicy(
     boolean sanitizeXhtml,
     boolean parallelLoading,
     int maxConcurrency,
-    long parseTimeoutMs) {
+    long parseTimeoutMs,
+    boolean useOffHeapResources,
+    long offHeapThresholdBytes) {
 
   public enum Mode {
     STRICT,
@@ -35,6 +41,7 @@ public record EpubProcessingPolicy(
   public static final long DEFAULT_MAX_TOTAL_UNCOMPRESSED_BYTES = 1024L * 1024 * 1024;
   public static final int DEFAULT_MAX_CONCURRENCY = Runtime.getRuntime().availableProcessors();
   public static final long DEFAULT_PARSE_TIMEOUT_MS = 30_000L;
+  public static final long DEFAULT_OFF_HEAP_THRESHOLD_BYTES = 64L * 1024;
 
   public EpubProcessingPolicy {
     if (mode == null) {
@@ -58,6 +65,9 @@ public record EpubProcessingPolicy(
     if (parseTimeoutMs < 0) {
       throw new IllegalArgumentException("parseTimeoutMs must be >= 0 (0 = no timeout)");
     }
+    if (offHeapThresholdBytes < 0) {
+      throw new IllegalArgumentException("offHeapThresholdBytes must be >= 0");
+    }
   }
 
   public static EpubProcessingPolicy defaultPolicy() {
@@ -70,7 +80,9 @@ public record EpubProcessingPolicy(
         true,
         true,
         DEFAULT_MAX_CONCURRENCY,
-        DEFAULT_PARSE_TIMEOUT_MS);
+        DEFAULT_PARSE_TIMEOUT_MS,
+        true,
+        DEFAULT_OFF_HEAP_THRESHOLD_BYTES);
   }
 
   public static EpubProcessingPolicy strictPolicy() {
@@ -83,123 +95,116 @@ public record EpubProcessingPolicy(
         true,
         true,
         DEFAULT_MAX_CONCURRENCY,
-        DEFAULT_PARSE_TIMEOUT_MS);
+        DEFAULT_PARSE_TIMEOUT_MS,
+        true,
+        DEFAULT_OFF_HEAP_THRESHOLD_BYTES);
   }
 
-  public EpubProcessingPolicy withMode(Mode value) {
-    return new EpubProcessingPolicy(
-        value,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
+  public static Builder builder() {
+    return new Builder();
   }
 
-  public EpubProcessingPolicy withMaxArchiveBytes(long value) {
-    return new EpubProcessingPolicy(
-        mode,
-        value,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
+  public static Builder builder(EpubProcessingPolicy base) {
+    return new Builder(base);
   }
 
-  public EpubProcessingPolicy withMaxEntries(int value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        value,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
-  }
+  public static final class Builder {
+    private Mode mode = Mode.RECOVER;
+    private long maxArchiveBytes = DEFAULT_MAX_ARCHIVE_BYTES;
+    private int maxEntries = DEFAULT_MAX_ENTRIES;
+    private long maxEntryBytes = DEFAULT_MAX_ENTRY_BYTES;
+    private long maxTotalUncompressedBytes = DEFAULT_MAX_TOTAL_UNCOMPRESSED_BYTES;
+    private boolean sanitizeXhtml = true;
+    private boolean parallelLoading = true;
+    private int maxConcurrency = DEFAULT_MAX_CONCURRENCY;
+    private long parseTimeoutMs = DEFAULT_PARSE_TIMEOUT_MS;
+    private boolean useOffHeapResources = true;
+    private long offHeapThresholdBytes = DEFAULT_OFF_HEAP_THRESHOLD_BYTES;
 
-  public EpubProcessingPolicy withMaxEntryBytes(long value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        value,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
-  }
+    private Builder() {}
 
-  public EpubProcessingPolicy withMaxTotalUncompressedBytes(long value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        value,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
-  }
+    private Builder(EpubProcessingPolicy base) {
+      this.mode = base.mode();
+      this.maxArchiveBytes = base.maxArchiveBytes();
+      this.maxEntries = base.maxEntries();
+      this.maxEntryBytes = base.maxEntryBytes();
+      this.maxTotalUncompressedBytes = base.maxTotalUncompressedBytes();
+      this.sanitizeXhtml = base.sanitizeXhtml();
+      this.parallelLoading = base.parallelLoading();
+      this.maxConcurrency = base.maxConcurrency();
+      this.parseTimeoutMs = base.parseTimeoutMs();
+      this.useOffHeapResources = base.useOffHeapResources();
+      this.offHeapThresholdBytes = base.offHeapThresholdBytes();
+    }
 
-  public EpubProcessingPolicy withSanitizeXhtml(boolean value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        value,
-        parallelLoading,
-        maxConcurrency,
-        parseTimeoutMs);
-  }
+    public Builder mode(Mode value) {
+      this.mode = value;
+      return this;
+    }
 
-  public EpubProcessingPolicy withParallelLoading(boolean value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        value,
-        maxConcurrency,
-        parseTimeoutMs);
-  }
+    public Builder maxArchiveBytes(long value) {
+      this.maxArchiveBytes = value;
+      return this;
+    }
 
-  public EpubProcessingPolicy withMaxConcurrency(int value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        value,
-        parseTimeoutMs);
-  }
+    public Builder maxEntries(int value) {
+      this.maxEntries = value;
+      return this;
+    }
 
-  public EpubProcessingPolicy withParseTimeoutMs(long value) {
-    return new EpubProcessingPolicy(
-        mode,
-        maxArchiveBytes,
-        maxEntries,
-        maxEntryBytes,
-        maxTotalUncompressedBytes,
-        sanitizeXhtml,
-        parallelLoading,
-        maxConcurrency,
-        value);
+    public Builder maxEntryBytes(long value) {
+      this.maxEntryBytes = value;
+      return this;
+    }
+
+    public Builder maxTotalUncompressedBytes(long value) {
+      this.maxTotalUncompressedBytes = value;
+      return this;
+    }
+
+    public Builder sanitizeXhtml(boolean value) {
+      this.sanitizeXhtml = value;
+      return this;
+    }
+
+    public Builder parallelLoading(boolean value) {
+      this.parallelLoading = value;
+      return this;
+    }
+
+    public Builder maxConcurrency(int value) {
+      this.maxConcurrency = value;
+      return this;
+    }
+
+    public Builder parseTimeoutMs(long value) {
+      this.parseTimeoutMs = value;
+      return this;
+    }
+
+    public Builder useOffHeapResources(boolean value) {
+      this.useOffHeapResources = value;
+      return this;
+    }
+
+    public Builder offHeapThresholdBytes(long value) {
+      this.offHeapThresholdBytes = value;
+      return this;
+    }
+
+    public EpubProcessingPolicy build() {
+      return new EpubProcessingPolicy(
+          mode,
+          maxArchiveBytes,
+          maxEntries,
+          maxEntryBytes,
+          maxTotalUncompressedBytes,
+          sanitizeXhtml,
+          parallelLoading,
+          maxConcurrency,
+          parseTimeoutMs,
+          useOffHeapResources,
+          offHeapThresholdBytes);
+    }
   }
 }

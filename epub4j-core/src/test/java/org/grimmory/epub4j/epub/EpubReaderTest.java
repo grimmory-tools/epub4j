@@ -288,7 +288,10 @@ public class EpubReaderTest {
             MediaTypes.XHTML);
     resources.add(res);
 
-    EpubProcessingPolicy noSanitize = EpubProcessingPolicy.defaultPolicy().withSanitizeXhtml(false);
+    EpubProcessingPolicy noSanitize =
+        EpubProcessingPolicy.builder(EpubProcessingPolicy.defaultPolicy())
+            .sanitizeXhtml(false)
+            .build();
     new EpubReader(null, noSanitize).readEpub(resources);
     String content = new String(res.getData(), StandardCharsets.UTF_8);
 

@@ -5,9 +5,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -17,6 +20,7 @@ import java.util.zip.ZipOutputStream;
 import org.grimmory.epub4j.domain.Book;
 import org.grimmory.epub4j.domain.MediaTypes;
 import org.grimmory.epub4j.domain.Metadata;
+import org.grimmory.epub4j.domain.OffHeapResource;
 import org.grimmory.epub4j.domain.Resource;
 import org.grimmory.epub4j.domain.Resources;
 import org.grimmory.epub4j.domain.Spine;
@@ -45,6 +49,7 @@ public class EpubWriter {
       Pattern.compile("[\\\\:*?\"<>|\\x00-\\x1F\\x7F]");
 
   private BookProcessor bookProcessor = BookProcessor.IDENTITY_BOOKPROCESSOR;
+  private EpubWriterConfig config = EpubWriterConfig.defaultConfig();
 
   public EpubWriter() {
     this(BookProcessor.IDENTITY_BOOKPROCESSOR);
@@ -54,9 +59,19 @@ public class EpubWriter {
     this.bookProcessor = bookProcessor;
   }
 
+  public EpubWriter(BookProcessor bookProcessor, EpubWriterConfig config) {
+    this.bookProcessor = bookProcessor;
+    this.config = config;
+  }
+
+  public EpubWriter(EpubWriterConfig config) {
+    this.config = config;
+  }
+
   public void write(Book book, OutputStream out) throws IOException {
     book = processBook(book);
     try (ZipOutputStream resultStream = new ZipOutputStream(out)) {
+      resultStream.setLevel(config.compressionLevel());
       writeMimeType(resultStream);
       writeContainer(resultStream);
       initTOCResource(book);
@@ -124,10 +139,10 @@ public class EpubWriter {
     }
   }
 
-  private static void writeResources(Book book, ZipOutputStream resultStream) throws IOException {
+  private void writeResources(Book book, ZipOutputStream resultStream) throws IOException {
     Set<String> writtenEntries = new HashSet<>();
     for (Resource resource : book.getResources().getAll()) {
-      writeResource(resource, resultStream, writtenEntries);
+      writeResource(resource, resultStream, writtenEntries, config);
     }
   }
 
@@ -140,13 +155,44 @@ public class EpubWriter {
    * @throws IOException
    */
   private static void writeResource(
-      Resource resource, ZipOutputStream resultStream, Set<String> writtenEntries)
+      Resource resource,
+      ZipOutputStream resultStream,
+      Set<String> writtenEntries,
+      EpubWriterConfig writerConfig)
       throws IOException {
     if (resource == null) {
       return;
     }
     String href = sanitizeHref(encodeHref(resource.getHref()));
-    var zipEntry = new ZipEntry("OEBPS/" + href);
+    // NFC normalization for cross-platform ZIP compatibility
+    String raw = "OEBPS/" + href;
+    String entryName =
+        Normalizer.isNormalized(raw, Normalizer.Form.NFC)
+            ? raw
+            : Normalizer.normalize(raw, Normalizer.Form.NFC);
+    var zipEntry = new ZipEntry(entryName);
+
+    // Store already-compressed formats without re-deflating
+    if (writerConfig.shouldStore(resource.getMediaType())) {
+      zipEntry.setMethod(ZipEntry.STORED);
+      try {
+        if (resource instanceof OffHeapResource offHeap && offHeap.getSegment() != null) {
+          MemorySegment seg = offHeap.getSegment();
+          long size = seg.byteSize();
+          zipEntry.setSize(size);
+          zipEntry.setCompressedSize(size);
+          zipEntry.setCrc(calculateCrcFromSegment(seg));
+        } else {
+          byte[] data = resource.getData();
+          zipEntry.setSize(data.length);
+          zipEntry.setCompressedSize(data.length);
+          zipEntry.setCrc(calculateCrc(data));
+        }
+      } catch (IOException e) {
+        log.log(System.Logger.Level.WARNING, "Failed to pre-calculate STORED entry: " + href, e);
+        zipEntry.setMethod(ZipEntry.DEFLATED);
+      }
+    }
 
     // PKG_060: Prevent duplicate ZIP entries
     if (!writtenEntries.add(zipEntry.getName())) {
@@ -156,8 +202,13 @@ public class EpubWriter {
 
     resultStream.putNextEntry(zipEntry);
     try {
-      try (InputStream inputStream = resource.getInputStream()) {
-        IOUtil.copy(inputStream, resultStream);
+      if (resource instanceof OffHeapResource offHeap && offHeap.getSegment() != null) {
+        // Stream directly from off-heap memory without going through InputStream
+        writeSegmentToStream(offHeap.getSegment(), resultStream);
+      } else {
+        try (InputStream inputStream = resource.getInputStream()) {
+          IOUtil.copy(inputStream, resultStream);
+        }
       }
     } catch (Exception e) {
       log.log(System.Logger.Level.ERROR, e.getMessage(), e);
@@ -225,6 +276,35 @@ public class EpubWriter {
     return crc.getValue();
   }
 
+  /** Computes CRC32 directly from a MemorySegment without copying to a heap byte[]. */
+  private static long calculateCrcFromSegment(MemorySegment segment) {
+    CRC32 crc = new CRC32();
+    long size = segment.byteSize();
+    long offset = 0;
+    byte[] buffer = new byte[(int) Math.min(IOUtil.IO_COPY_BUFFER_SIZE, size)];
+    while (offset < size) {
+      int chunk = (int) Math.min(buffer.length, size - offset);
+      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, buffer, 0, chunk);
+      crc.update(buffer, 0, chunk);
+      offset += chunk;
+    }
+    return crc.getValue();
+  }
+
+  /** Copies a MemorySegment to an OutputStream in chunks, avoiding full heap materialization. */
+  private static void writeSegmentToStream(MemorySegment segment, OutputStream out)
+      throws IOException {
+    long size = segment.byteSize();
+    long offset = 0;
+    byte[] buffer = new byte[(int) Math.min(IOUtil.IO_COPY_BUFFER_SIZE, size)];
+    while (offset < size) {
+      int toWrite = (int) Math.min(buffer.length, size - offset);
+      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, buffer, 0, toWrite);
+      out.write(buffer, 0, toWrite);
+      offset += toWrite;
+    }
+  }
+
   static String getNcxId() {
     return "ncx";
   }
@@ -243,6 +323,14 @@ public class EpubWriter {
 
   public void setBookProcessor(BookProcessor bookProcessor) {
     this.bookProcessor = bookProcessor;
+  }
+
+  public EpubWriterConfig getConfig() {
+    return config;
+  }
+
+  public void setConfig(EpubWriterConfig config) {
+    this.config = config;
   }
 
   static String encodeHref(String href) {

@@ -448,6 +448,29 @@ EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry(
 );
 
 /**
+ * Callback for reading archive entry in blocks
+ * @param data Data block
+ * @param size Size of data block
+ * @param user_data User-provided context
+ */
+typedef void (*epub_native_archive_read_callback)(const void* data, size_t size, void* user_data);
+
+/**
+ * Read an archive entry via callback (streaming)
+ * @param archive Archive handle
+ * @param entry_path Path of entry to read
+ * @param callback Callback function
+ * @param user_data User-provided context
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry_to_callback(
+    EpubNativeArchive* archive,
+    const char* entry_path,
+    epub_native_archive_read_callback callback,
+    void* user_data
+);
+
+/**
  * Check if archive entry exists
  * @param archive Archive handle
  * @param entry_path Path to check
@@ -457,6 +480,155 @@ EPUB_NATIVE_API EpubNativeError epub_native_archive_entry_exists(
     EpubNativeArchive* archive,
     const char* entry_path
 );
+
+// ============================================================================
+// Image Processing
+// ============================================================================
+
+/** Image format constants for epub_native_image_get_dimensions */
+#define EPUB_NATIVE_IMAGE_FORMAT_UNKNOWN 0
+#define EPUB_NATIVE_IMAGE_FORMAT_JPEG    1
+#define EPUB_NATIVE_IMAGE_FORMAT_PNG     2
+#define EPUB_NATIVE_IMAGE_FORMAT_WEBP    3
+
+/**
+ * Check if JPEG processing support (libjpeg-turbo) is compiled in
+ * @return 1 if available, 0 otherwise
+ */
+EPUB_NATIVE_API int epub_native_image_has_jpeg(void);
+
+/**
+ * Check if PNG processing support (libpng) is compiled in
+ * @return 1 if available, 0 otherwise
+ */
+EPUB_NATIVE_API int epub_native_image_has_png(void);
+
+/**
+ * Check if WebP processing support (libwebp) is compiled in
+ * @return 1 if available, 0 otherwise
+ */
+EPUB_NATIVE_API int epub_native_image_has_webp(void);
+
+/**
+ * Read image dimensions and format without full decode
+ * @param data Image file bytes
+ * @param data_length Length of data
+ * @param out_width Output image width
+ * @param out_height Output image height
+ * @param out_format Output image format (EPUB_NATIVE_IMAGE_FORMAT_*)
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_image_get_dimensions(
+    const uint8_t* data,
+    size_t data_length,
+    int* out_width,
+    int* out_height,
+    int* out_format
+);
+
+/**
+ * Lossless JPEG optimization: progressive encoding + Huffman table optimization.
+ * Uses coefficient-level transform to avoid generation loss.
+ * @param data JPEG file bytes
+ * @param data_length Length of data
+ * @param out_data Output optimized JPEG bytes (caller must free with epub_native_image_data_free)
+ * @param out_length Output length
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_jpeg_optimize(
+    const uint8_t* data,
+    size_t data_length,
+    uint8_t** out_data,
+    size_t* out_length
+);
+
+/**
+ * Lossy JPEG re-compression at a target quality level.
+ * Decodes to pixels then re-encodes.
+ * @param data JPEG or PNG or WebP file bytes (any supported input format)
+ * @param data_length Length of data
+ * @param quality JPEG quality 1-100
+ * @param progressive 1 for progressive JPEG, 0 for baseline
+ * @param out_data Output JPEG bytes (caller must free with epub_native_image_data_free)
+ * @param out_length Output length
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_jpeg_compress(
+    const uint8_t* data,
+    size_t data_length,
+    int quality,
+    int progressive,
+    uint8_t** out_data,
+    size_t* out_length
+);
+
+/**
+ * Optimize PNG: strip ancillary chunks, re-compress with maximum effort.
+ * @param data PNG file bytes
+ * @param data_length Length of data
+ * @param strip_ancillary 1 to strip non-critical chunks, 0 to preserve
+ * @param out_data Output PNG bytes (caller must free with epub_native_image_data_free)
+ * @param out_length Output length
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_png_optimize(
+    const uint8_t* data,
+    size_t data_length,
+    int strip_ancillary,
+    uint8_t** out_data,
+    size_t* out_length
+);
+
+/**
+ * Encode raw RGBA pixels to WebP
+ * @param rgba_pixels Raw RGBA pixel data (4 bytes per pixel)
+ * @param width Image width
+ * @param height Image height
+ * @param stride Row stride in bytes (typically width * 4)
+ * @param quality Lossy quality 0-100, or -1 for lossless
+ * @param out_data Output WebP bytes (caller must free with epub_native_image_data_free)
+ * @param out_length Output length
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_webp_encode(
+    const uint8_t* rgba_pixels,
+    int width,
+    int height,
+    int stride,
+    int quality,
+    uint8_t** out_data,
+    size_t* out_length
+);
+
+/**
+ * Resize an image with high-quality Lanczos filtering.
+ * Decodes input, resizes, re-encodes to the target format.
+ * @param data Image file bytes (JPEG, PNG, or WebP)
+ * @param data_length Length of data
+ * @param target_width Target width in pixels
+ * @param target_height Target height in pixels
+ * @param output_format Output format (EPUB_NATIVE_IMAGE_FORMAT_JPEG, _PNG, or _WEBP)
+ * @param quality Output quality for lossy formats (1-100)
+ * @param out_data Output resized image bytes (caller must free with epub_native_image_data_free)
+ * @param out_length Output length
+ * @return Error code
+ */
+EPUB_NATIVE_API EpubNativeError epub_native_image_resize(
+    const uint8_t* data,
+    size_t data_length,
+    int target_width,
+    int target_height,
+    int output_format,
+    int quality,
+    uint8_t** out_data,
+    size_t* out_length
+);
+
+/**
+ * Free image data returned by image processing functions
+ * @param data Data to free
+ */
+EPUB_NATIVE_API void epub_native_image_data_free(uint8_t* data);
 
 #ifdef __cplusplus
 }

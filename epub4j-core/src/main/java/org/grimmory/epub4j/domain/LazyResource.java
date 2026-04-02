@@ -58,6 +58,15 @@ public final class LazyResource extends Resource {
   }
 
   /**
+   * Returns a streaming view that always reads from the provider, bypassing any cached data. This
+   * avoids heap allocation when the caller only needs to stream the contents once.
+   */
+  @Override
+  public InputStream asInputStream() throws IOException {
+    return resourceProvider.getResourceStream(this.originalHref);
+  }
+
+  /**
    * Initializes the resource by loading its data into memory.
    *
    * @throws IOException

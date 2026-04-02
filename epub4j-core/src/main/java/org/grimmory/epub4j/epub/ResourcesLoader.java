@@ -299,6 +299,12 @@ public class ResourcesLoader {
                         EpubReader.IngestionCode.RESOURCE_SIZE_EXCEEDED, message, name));
                 continue;
               }
+              // Promote large resources to off-heap when policy enables it
+              if (resolvedPolicy.useOffHeapResources()
+                  && actualSize >= resolvedPolicy.offHeapThresholdBytes()) {
+                byte[] data = resource.getData();
+                resource = new OffHeapResource(data, name);
+              }
             }
           }
         }
@@ -781,7 +787,11 @@ public class ResourcesLoader {
       try (InputStream entryStream = zipFile.getInputStream(zipEntry)) {
         int initialCapacity = initialCapacityHint(zipEntry.getSize(), policy.maxEntryBytes());
         byte[] data = readStreamWithLimit(entryStream, policy.maxEntryBytes(), initialCapacity);
-        resource = new Resource(data, name);
+        if (policy.useOffHeapResources() && data.length >= policy.offHeapThresholdBytes()) {
+          resource = new OffHeapResource(data, name);
+        } else {
+          resource = new Resource(data, name);
+        }
       }
     }
 

@@ -57,9 +57,10 @@ public class EpubReaderBenchmark {
   @Benchmark
   public void readParallel(Blackhole bh) throws IOException {
     var policy =
-        EpubProcessingPolicy.defaultPolicy()
-            .withParallelLoading(true)
-            .withMaxConcurrency(Runtime.getRuntime().availableProcessors());
+        EpubProcessingPolicy.builder()
+            .parallelLoading(true)
+            .maxConcurrency(Runtime.getRuntime().availableProcessors())
+            .build();
     var reader = new EpubReader(null, policy);
     Book book = reader.readEpub(new ByteArrayInputStream(epubBytes));
     bh.consume(book);

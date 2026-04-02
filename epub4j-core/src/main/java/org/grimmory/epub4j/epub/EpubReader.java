@@ -215,7 +215,7 @@ public class EpubReader {
   }
 
   private EpubProcessingPolicy strictPolicy() {
-    return policy.withMode(EpubProcessingPolicy.Mode.STRICT);
+    return EpubProcessingPolicy.builder(policy).mode(EpubProcessingPolicy.Mode.STRICT).build();
   }
 
   private static void copyToTempWithLimit(InputStream in, Path tempFile, long maxBytes)

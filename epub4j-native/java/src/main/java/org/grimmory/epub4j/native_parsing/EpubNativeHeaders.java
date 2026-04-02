@@ -1731,4 +1731,170 @@ public class EpubNativeHeaders extends EpubNativeHeaders$shared {
            throw new AssertionError("should not reach here", ex$);
         }
     }
+
+    // ========================================================================
+    // Image Processing
+    // ========================================================================
+
+    private static class epub_native_image_has_jpeg {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(C_INT);
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_has_jpeg");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_image_has_jpeg() {
+        var mh$ = epub_native_image_has_jpeg.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_has_jpeg"); }
+            return (int)mh$.invokeExact();
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_image_has_png {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(C_INT);
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_has_png");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_image_has_png() {
+        var mh$ = epub_native_image_has_png.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_has_png"); }
+            return (int)mh$.invokeExact();
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_image_has_webp {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(C_INT);
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_has_webp");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_image_has_webp() {
+        var mh$ = epub_native_image_has_webp.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_has_webp"); }
+            return (int)mh$.invokeExact();
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_image_get_dimensions {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_LONG_LONG, C_POINTER, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_get_dimensions");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_image_get_dimensions(MemorySegment data, long data_length, MemorySegment out_width, MemorySegment out_height, MemorySegment out_format) {
+        var mh$ = epub_native_image_get_dimensions.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_get_dimensions", data, data_length, out_width, out_height, out_format); }
+            return (int)mh$.invokeExact(data, data_length, out_width, out_height, out_format);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_jpeg_optimize {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_LONG_LONG, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_jpeg_optimize");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_jpeg_optimize(MemorySegment data, long data_length, MemorySegment out_data, MemorySegment out_length) {
+        var mh$ = epub_native_jpeg_optimize.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_jpeg_optimize", data, data_length, out_data, out_length); }
+            return (int)mh$.invokeExact(data, data_length, out_data, out_length);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_jpeg_compress {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_LONG_LONG, C_INT, C_INT, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_jpeg_compress");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_jpeg_compress(MemorySegment data, long data_length, int quality, int progressive, MemorySegment out_data, MemorySegment out_length) {
+        var mh$ = epub_native_jpeg_compress.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_jpeg_compress", data, data_length, quality, progressive, out_data, out_length); }
+            return (int)mh$.invokeExact(data, data_length, quality, progressive, out_data, out_length);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_png_optimize {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_LONG_LONG, C_INT, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_png_optimize");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_png_optimize(MemorySegment data, long data_length, int strip_ancillary, MemorySegment out_data, MemorySegment out_length) {
+        var mh$ = epub_native_png_optimize.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_png_optimize", data, data_length, strip_ancillary, out_data, out_length); }
+            return (int)mh$.invokeExact(data, data_length, strip_ancillary, out_data, out_length);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_webp_encode {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_webp_encode");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_webp_encode(MemorySegment rgba_pixels, int width, int height, int stride, int quality, MemorySegment out_data, MemorySegment out_length) {
+        var mh$ = epub_native_webp_encode.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_webp_encode", rgba_pixels, width, height, stride, quality, out_data, out_length); }
+            return (int)mh$.invokeExact(rgba_pixels, width, height, stride, quality, out_data, out_length);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_image_resize {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT, C_POINTER, C_LONG_LONG, C_INT, C_INT, C_INT, C_INT, C_POINTER, C_POINTER
+        );
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_resize");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static int epub_native_image_resize(MemorySegment data, long data_length, int target_width, int target_height, int output_format, int quality, MemorySegment out_data, MemorySegment out_length) {
+        var mh$ = epub_native_image_resize.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_resize", data, data_length, target_width, target_height, output_format, quality, out_data, out_length); }
+            return (int)mh$.invokeExact(data, data_length, target_width, target_height, output_format, quality, out_data, out_length);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
+
+    private static class epub_native_image_data_free {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.ofVoid(C_POINTER);
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_image_data_free");
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static void epub_native_image_data_free(MemorySegment data) {
+        var mh$ = epub_native_image_data_free.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) { traceDowncall("epub_native_image_data_free", data); }
+            mh$.invokeExact(data);
+        } catch (Error | RuntimeException ex) { throw ex;
+        } catch (Throwable ex$) { throw new AssertionError("should not reach here", ex$); }
+    }
 }

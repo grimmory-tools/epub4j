@@ -12,7 +12,7 @@ import org.grimmory.epub4j.util.commons.io.XmlStreamReader;
  *
  * @author paul
  */
-public sealed class Resource implements Serializable permits LazyResource {
+public sealed class Resource implements Serializable permits LazyResource, OffHeapResource {
 
   @Serial private static final long serialVersionUID = 1043946707835004037L;
   private String id;
@@ -137,6 +137,18 @@ public sealed class Resource implements Serializable permits LazyResource {
    */
   public InputStream getInputStream() throws IOException {
     return new ByteArrayInputStream(getData());
+  }
+
+  /**
+   * Returns an InputStream that avoids materializing the full resource data on-heap when possible.
+   * Subclasses override to provide streaming access directly from the backing store (off-heap
+   * segment, lazy provider) without copying to byte[] first.
+   *
+   * @return a streaming view of the resource contents
+   * @throws IOException if the resource cannot be read
+   */
+  public InputStream asInputStream() throws IOException {
+    return getInputStream();
   }
 
   /**
