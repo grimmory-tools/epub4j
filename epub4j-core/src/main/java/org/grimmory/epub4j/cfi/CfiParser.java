@@ -34,8 +34,6 @@ public final class CfiParser {
 
   private CfiParser() {}
 
-  // ── Parsing ────────────────────────────────────────────────────────────────
-
   /**
    * Parses a raw CFI string into a {@link CfiExpression}.
    *
@@ -81,8 +79,6 @@ public final class CfiParser {
     return new CfiExpression(spinePos, contentSeg.steps(), contentSeg.offset(), null, null);
   }
 
-  // ── Formatting ─────────────────────────────────────────────────────────────
-
   /** Formats a {@link CfiExpression} back into a canonical CFI string. */
   public static String format(CfiExpression expr) {
     var sb = new StringBuilder("epubcfi(/6/");
@@ -114,8 +110,6 @@ public final class CfiParser {
     }
     return sb.toString();
   }
-
-  // ── Internal helpers ───────────────────────────────────────────────────────
 
   /** Remove the {@code epubcfi(…)} envelope. */
   private static String unwrap(String cfi) {
