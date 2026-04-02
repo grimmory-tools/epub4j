@@ -145,6 +145,21 @@ Run the verification path used by CI:
 ./gradlew check --warning-mode all
 ```
 
+## License
+
+This project is licensed under the [GNU Affero General Public License v3.0](LICENSE) (AGPL-3.0-or-later).
+
+### Attribution
+
+epub4j-grimmory is a fork of [epub4j](https://github.com/documentnode/epub4j) (Apache-2.0). Git history have kept in-tact.
+
+New code and substantial modifications are:
+
+- Copyright (C) 2025-2026 Grimmory contributors
+- Copyright (C) 2024-2026 Booklore contributors
+
+Some artifacts were mistankenly published under the wrong license as part of an automation. These were removed since. If you downloaded any of those they contain viral APGL code.
+
 For focused module checks while iterating:
 
 ```bash
