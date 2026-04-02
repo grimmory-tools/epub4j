@@ -76,7 +76,7 @@ if (result.report().hasCorrections()) {
 }
 ```
 
-## Advanced repair pass
+## Repair
 
 `BookRepair` now includes a stricter cleanup pass for XHTML content:
 
@@ -151,7 +151,7 @@ This project is licensed under the [GNU Affero General Public License v3.0](LICE
 
 ### Attribution
 
-epub4j-grimmory is a fork of [epub4j](https://github.com/documentnode/epub4j) (Apache-2.0). The git history have been kept in-tact from the fork.
+org.grimmory.epub4j is a fork of [epub4j](https://github.com/documentnode/epub4j) (Apache-2.0). The git history have been kept in-tact from the fork.
 
 New code and substantial modifications are:
 
@@ -159,9 +159,3 @@ New code and substantial modifications are:
 - Copyright (C) 2024-2026 Booklore contributors
 
 Some artifacts were mistankenly published under the wrong license as part of an automation. These were removed since. If you downloaded any of those, they contain viral APGL code.
-
-For focused module checks while iterating:
-
-```bash
-./gradlew :comic4j:check
-```
