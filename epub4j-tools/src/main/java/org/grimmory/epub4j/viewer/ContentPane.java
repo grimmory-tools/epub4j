@@ -1,3 +1,13 @@
+/*
+ * Originally from epub4j (https://github.com/documentnode/epub4j)
+ * SPDX-License-Identifier: Apache-2.0
+ * Copyright (C) Paul Siegmund and epub4j contributors
+ *
+ * Modifications:
+ * SPDX-License-Identifier: AGPL-3.0-or-later
+ * Copyright (C) 2025-2026 Grimmory contributors
+ * Copyright (C) 2025-2026 Booklore contributors
+ */
 package org.grimmory.epub4j.viewer;
 
 import java.awt.Color;

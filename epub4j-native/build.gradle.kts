@@ -260,8 +260,8 @@ publishing {
                 packaging = "jar"
                 licenses {
                     license {
-                        name = "The Apache License, Version 2.0"
-                        url = "https://www.apache.org/licenses/LICENSE-2.0.txt"
+                        name = "GNU Affero General Public License v3.0"
+                        url = "https://www.gnu.org/licenses/agpl-3.0.txt"
                     }
                 }
                 developers {
