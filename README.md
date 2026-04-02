@@ -156,6 +156,6 @@ org.grimmory.epub4j is a fork of [epub4j](https://github.com/documentnode/epub4j
 New code and substantial modifications are:
 
 - Copyright (C) 2025-2026 Grimmory contributors
-- Copyright (C) 2024-2026 Booklore contributors
+- Copyright (C) 2025-2026 Booklore contributors
 
 Some artifacts were mistankenly published under the wrong license as part of an automation. These were removed since. If you downloaded any of those, they contain viral APGL code.
