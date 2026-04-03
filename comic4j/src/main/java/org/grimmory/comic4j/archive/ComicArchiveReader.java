@@ -169,12 +169,8 @@ public final class ComicArchiveReader {
   public static List<ImageEntry> listImages(Path path, ComicProcessingPolicy policy) {
     validatePath(path);
     validateArchiveSize(path, policy);
-    List<ImageEntry> images = ImageExtractor.listImageEntries(path);
-    if (images.size() > policy.maxEntries()) {
-      throw ComicError.ERR_C053.exception(
-          "%d entries exceeds limit of %d".formatted(images.size(), policy.maxEntries()));
-    }
-    return images;
+    validateEntries(path, policy);
+    return ImageExtractor.listImageEntries(path);
   }
 
   /**
@@ -283,6 +279,37 @@ public final class ComicArchiveReader {
             "%,d bytes exceeds limit of %,d bytes".formatted(fileSize, policy.maxArchiveBytes()));
       }
     } catch (IOException e) {
+      throw ComicError.ERR_C003.exception(path.toString(), e);
+    }
+  }
+
+  private static void validateEntries(Path path, ComicProcessingPolicy policy) {
+    try {
+      List<ArchiveEntry> entries = Archive.getEntries(path);
+      if (entries.size() > policy.maxEntries()) {
+        throw ComicError.ERR_C053.exception(
+            "%d entries exceeds limit of %d".formatted(entries.size(), policy.maxEntries()));
+      }
+
+      long totalUncompressedBytes = 0;
+      for (ArchiveEntry entry : entries) {
+        if (entry.getName() == null || entry.getName().endsWith("/")) continue;
+
+        long size = entry.getSize() != null ? entry.getSize() : 0;
+        if (size > policy.maxEntryBytes()) {
+          throw ComicError.ERR_C051.exception(
+              "Entry %s size %,d bytes exceeds limit of %,d bytes"
+                  .formatted(entry.getName(), size, policy.maxEntryBytes()));
+        }
+
+        totalUncompressedBytes += size;
+        if (totalUncompressedBytes > policy.maxTotalUncompressedBytes()) {
+          throw ComicError.ERR_C052.exception(
+              "Total uncompressed size %,d bytes exceeds limit of %,d bytes"
+                  .formatted(totalUncompressedBytes, policy.maxTotalUncompressedBytes()));
+        }
+      }
+    } catch (LibArchiveException e) {
       throw ComicError.ERR_C003.exception(path.toString(), e);
     }
   }

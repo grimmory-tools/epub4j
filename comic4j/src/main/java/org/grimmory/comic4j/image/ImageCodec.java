@@ -131,7 +131,12 @@ public final class ImageCodec {
     }
     BufferedImage rgb =
         new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_RGB);
-    rgb.createGraphics().drawImage(image, 0, 0, null);
+    java.awt.Graphics2D g2d = rgb.createGraphics();
+    try {
+      g2d.drawImage(image, 0, 0, null);
+    } finally {
+      g2d.dispose();
+    }
     image.flush();
     return rgb;
   }
