@@ -5,9 +5,7 @@
  */
 package org.grimmory.comic4j.image;
 
-import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
-import java.awt.image.ColorConvertOp;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -32,8 +30,6 @@ import org.grimmory.comic4j.error.ComicError;
  * possible.
  */
 public final class ImageCodec {
-
-  private static final System.Logger LOG = System.getLogger(ImageCodec.class.getName());
 
   private ImageCodec() {}
 
@@ -114,7 +110,8 @@ public final class ImageCodec {
         long pixels = (long) width * height;
         if (pixels > maxPixelCount) {
           throw ComicError.ERR_C054.exception(
-              "%dx%d (%,d px) exceeds limit of %,d px".formatted(width, height, pixels, maxPixelCount));
+              "%dx%d (%,d px) exceeds limit of %,d px"
+                  .formatted(width, height, pixels, maxPixelCount));
         }
         image = reader.read(0);
       } finally {
@@ -163,7 +160,8 @@ public final class ImageCodec {
 
   private static void validateQuality(float quality) {
     if (quality < 0.0f || quality > 1.0f) {
-      throw new IllegalArgumentException("JPEG quality must be between 0.0 and 1.0, got: " + quality);
+      throw new IllegalArgumentException(
+          "JPEG quality must be between 0.0 and 1.0, got: " + quality);
     }
   }
 }

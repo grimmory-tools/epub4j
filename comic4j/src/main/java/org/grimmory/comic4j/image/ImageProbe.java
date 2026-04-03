@@ -28,9 +28,6 @@ import javax.imageio.stream.ImageInputStream;
  */
 public final class ImageProbe {
 
-  /** Maximum header bytes needed for any supported format. */
-  private static final int MAX_HEADER_SIZE = 30;
-
   // JPEG markers
   private static final int JPEG_SOI = 0xFFD8;
   private static final int JPEG_SOF0 = 0xFFC0;
@@ -38,9 +35,6 @@ public final class ImageProbe {
 
   // PNG signature
   private static final long PNG_SIGNATURE = 0x89504E470D0A1A0AL;
-
-  // BMP magic
-  private static final short BMP_MAGIC = 0x424D; // "BM"
 
   // WEBP container
   private static final int RIFF_MAGIC = 0x52494646; // "RIFF"
@@ -67,8 +61,7 @@ public final class ImageProbe {
 
   /**
    * Reads image dimensions from the given stream by parsing the file header. The stream is consumed
-   * up to {@value MAX_HEADER_SIZE} bytes for header probing; if that fails, falls back to ImageIO
-   * which may read more.
+   * up to header probing; if that fails, falls back to ImageIO which may read more.
    *
    * @param stream the image input stream (not closed by this method; should support mark/reset or
    *     be a fresh stream)
@@ -103,8 +96,9 @@ public final class ImageProbe {
       }
 
       // JPEG: SOI marker 0xFFD8
-      int first2 = Byte.toUnsignedInt(seg.get(ValueLayout.JAVA_BYTE, 0)) << 8
-          | Byte.toUnsignedInt(seg.get(ValueLayout.JAVA_BYTE, 1));
+      int first2 =
+          Byte.toUnsignedInt(seg.get(ValueLayout.JAVA_BYTE, 0)) << 8
+              | Byte.toUnsignedInt(seg.get(ValueLayout.JAVA_BYTE, 1));
       if (first2 == JPEG_SOI) {
         return probeJpeg(data, length);
       }
@@ -163,11 +157,19 @@ public final class ImageProbe {
         continue;
       }
 
-      if (marker == JPEG_SOF0 || marker == JPEG_SOF2
-          || marker == 0xFFC1 || marker == 0xFFC3
-          || marker == 0xFFC5 || marker == 0xFFC6 || marker == 0xFFC7
-          || marker == 0xFFC9 || marker == 0xFFCA || marker == 0xFFCB
-          || marker == 0xFFCD || marker == 0xFFCE || marker == 0xFFCF) {
+      if (marker == JPEG_SOF0
+          || marker == JPEG_SOF2
+          || marker == 0xFFC1
+          || marker == 0xFFC3
+          || marker == 0xFFC5
+          || marker == 0xFFC6
+          || marker == 0xFFC7
+          || marker == 0xFFC9
+          || marker == 0xFFCA
+          || marker == 0xFFCB
+          || marker == 0xFFCD
+          || marker == 0xFFCE
+          || marker == 0xFFCF) {
         // SOFn marker: length(2), precision(1), height(2), width(2)
         if (pos + 9 > length) return null;
         int height = ((data[pos + 5] & 0xFF) << 8) | (data[pos + 6] & 0xFF);
@@ -187,10 +189,12 @@ public final class ImageProbe {
 
   /** GIF: width and height are at bytes 6-9 (little-endian 16-bit). */
   private static ImageDimensions probeGif(MemorySegment seg) {
-    int width = Short.toUnsignedInt(
-        seg.get(ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 6));
-    int height = Short.toUnsignedInt(
-        seg.get(ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8));
+    int width =
+        Short.toUnsignedInt(
+            seg.get(ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 6));
+    int height =
+        Short.toUnsignedInt(
+            seg.get(ValueLayout.JAVA_SHORT_UNALIGNED.withOrder(ByteOrder.LITTLE_ENDIAN), 8));
     if (width <= 0 || height <= 0) return null;
     return ImageDimensions.of(width, height);
   }
@@ -208,8 +212,8 @@ public final class ImageProbe {
 
   /**
    * WEBP: Parse the RIFF container to find VP8, VP8L, or VP8X chunks. VP8 (lossy): dimensions in
-   * frame header VP8L (lossless): dimensions in the bitstream header VP8X (extended): canvas size in
-   * the chunk header
+   * frame header VP8L (lossless): dimensions in the bitstream header VP8X (extended): canvas size
+   * in the chunk header
    */
   private static ImageDimensions probeWebp(byte[] data, int length) {
     if (length < 21) return null;
@@ -279,8 +283,7 @@ public final class ImageProbe {
 
   /** Fallback: use ImageIO header reading (reads just enough for dimensions). */
   private static ImageDimensions fallbackImageIO(byte[] data) {
-    try (ImageInputStream iis =
-        ImageIO.createImageInputStream(new ByteArrayInputStream(data))) {
+    try (ImageInputStream iis = ImageIO.createImageInputStream(new ByteArrayInputStream(data))) {
       if (iis == null) return null;
       Iterator<ImageReader> readers = ImageIO.getImageReaders(iis);
       if (!readers.hasNext()) return null;
@@ -295,8 +298,8 @@ public final class ImageProbe {
       } finally {
         reader.dispose();
       }
-    } catch (IOException e) {
-      // Fall through
+    } catch (IOException ignored) {
+      // Fall through to return null
     }
     return null;
   }

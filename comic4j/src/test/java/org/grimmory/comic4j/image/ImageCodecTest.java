@@ -35,8 +35,7 @@ class ImageCodecTest {
   @Test
   void transcodeToJpeg_stream_works() throws IOException {
     byte[] png = TestArchiveHelper.createTestPng(50, 50, Color.GREEN);
-    byte[] result =
-        ImageCodec.transcodeToJpeg(new ByteArrayInputStream(png), 0.85f, 20_000_000L);
+    byte[] result = ImageCodec.transcodeToJpeg(new ByteArrayInputStream(png), 0.85f, 20_000_000L);
     assertNotNull(result);
     assertEquals((byte) 0xFF, result[0]);
     assertEquals((byte) 0xD8, result[1]);
@@ -46,34 +45,28 @@ class ImageCodecTest {
   void transcodeToJpeg_decompressionBomb_throws() throws IOException {
     byte[] png = TestArchiveHelper.createTestPng(200, 200, Color.RED);
     // Set a very low pixel limit
-    assertThrows(
-        ComicException.class,
-        () -> ImageCodec.transcodeToJpeg(png, 0.85f, 100L));
+    assertThrows(ComicException.class, () -> ImageCodec.transcodeToJpeg(png, 0.85f, 100L));
   }
 
   @Test
   void transcodeToJpeg_nullInput_throws() {
     assertThrows(
-        ComicException.class,
-        () -> ImageCodec.transcodeToJpeg((byte[]) null, 0.85f, 20_000_000L));
+        ComicException.class, () -> ImageCodec.transcodeToJpeg((byte[]) null, 0.85f, 20_000_000L));
   }
 
   @Test
   void transcodeToJpeg_emptyInput_throws() {
     assertThrows(
-        ComicException.class,
-        () -> ImageCodec.transcodeToJpeg(new byte[0], 0.85f, 20_000_000L));
+        ComicException.class, () -> ImageCodec.transcodeToJpeg(new byte[0], 0.85f, 20_000_000L));
   }
 
   @Test
   void transcodeToJpeg_invalidQuality_throws() throws IOException {
     byte[] png = TestArchiveHelper.createTestPng(10, 10, Color.RED);
     assertThrows(
-        IllegalArgumentException.class,
-        () -> ImageCodec.transcodeToJpeg(png, 1.5f, 20_000_000L));
+        IllegalArgumentException.class, () -> ImageCodec.transcodeToJpeg(png, 1.5f, 20_000_000L));
     assertThrows(
-        IllegalArgumentException.class,
-        () -> ImageCodec.transcodeToJpeg(png, -0.1f, 20_000_000L));
+        IllegalArgumentException.class, () -> ImageCodec.transcodeToJpeg(png, -0.1f, 20_000_000L));
   }
 
   @Test

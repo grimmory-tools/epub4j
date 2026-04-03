@@ -8,7 +8,6 @@ package org.grimmory.comic4j.archive;
 import com.github.gotson.nightcompress.Archive;
 import com.github.gotson.nightcompress.ArchiveEntry;
 import com.github.gotson.nightcompress.LibArchiveException;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -196,9 +195,7 @@ public final class ComicArchiveReader {
         dimensions.add(ImageProbe.readDimensions(data));
       } catch (Exception e) {
         LOG.log(
-            System.Logger.Level.DEBUG,
-            "Failed to probe dimensions for entry: " + image.name(),
-            e);
+            System.Logger.Level.DEBUG, "Failed to probe dimensions for entry: " + image.name(), e);
         dimensions.add(null);
       }
     }
@@ -283,8 +280,7 @@ public final class ComicArchiveReader {
       long fileSize = Files.size(path);
       if (fileSize > policy.maxArchiveBytes()) {
         throw ComicError.ERR_C050.exception(
-            "%,d bytes exceeds limit of %,d bytes"
-                .formatted(fileSize, policy.maxArchiveBytes()));
+            "%,d bytes exceeds limit of %,d bytes".formatted(fileSize, policy.maxArchiveBytes()));
       }
     } catch (IOException e) {
       throw ComicError.ERR_C003.exception(path.toString(), e);
