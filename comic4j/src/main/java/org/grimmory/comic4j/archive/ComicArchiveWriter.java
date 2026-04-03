@@ -47,11 +47,36 @@ public final class ComicArchiveWriter {
    *     fails
    */
   public static void writeToZip(Path zipPath, ComicInfo info) {
+    writeToZip(zipPath, info, null);
+  }
+
+  /**
+   * Writes ComicInfo.xml into an existing ZIP/CBZ archive. Optionally creates a backup in the
+   * specified directory before modification.
+   *
+   * @param zipPath the path to the ZIP/CBZ archive
+   * @param info the ComicInfo to write
+   * @param backupDir the directory to store a backup copy, or null to skip backup
+   * @throws org.grimmory.comic4j.error.ComicException if the format doesn't support writing or IO
+   *     fails
+   */
+  public static void writeToZip(Path zipPath, ComicInfo info, Path backupDir) {
     validateWritablePath(zipPath);
 
     ArchiveFormat format = ArchiveDetector.detect(zipPath);
     if (format != ArchiveFormat.ZIP) {
       throw ComicError.ERR_C009.exception(format.name());
+    }
+
+    // Create backup if requested
+    if (backupDir != null) {
+      try {
+        Files.createDirectories(backupDir);
+        Path backup = backupDir.resolve(zipPath.getFileName().toString() + ".bak");
+        Files.copy(zipPath, backup, StandardCopyOption.REPLACE_EXISTING);
+      } catch (IOException e) {
+        throw ComicError.ERR_C008.exception("Failed to create backup: " + zipPath, e);
+      }
     }
 
     byte[] comicInfoXml = ComicInfoWriter.write(info);

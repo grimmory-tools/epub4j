@@ -38,7 +38,18 @@ public enum ComicError {
 
   // Collection errors (ERR_C040-C049)
   ERR_C040("CBC collection file is invalid"),
-  ERR_C041("CBC manifest entry not found");
+  ERR_C041("CBC manifest entry not found"),
+
+  // Policy violation errors (ERR_C050-C059)
+  ERR_C050("Archive exceeds maximum compressed size"),
+  ERR_C051("Archive entry exceeds maximum uncompressed size"),
+  ERR_C052("Archive exceeds maximum total uncompressed size"),
+  ERR_C053("Archive exceeds maximum entry count"),
+  ERR_C054("Image exceeds maximum pixel count (decompression bomb)"),
+
+  // Codec errors (ERR_C060-C069)
+  ERR_C060("Image transcoding failed"),
+  ERR_C061("Unsupported image format for transcoding");
 
   private final String message;
 
