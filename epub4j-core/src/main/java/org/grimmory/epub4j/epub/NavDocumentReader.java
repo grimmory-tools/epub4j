@@ -5,7 +5,7 @@
  */
 package org.grimmory.epub4j.epub;
 
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.grimmory.epub4j.Constants;
@@ -87,8 +87,12 @@ public class NavDocumentReader {
       if (epubType == null || epubType.isEmpty()) {
         epubType = nav.getAttribute("epub:type");
       }
-      if (epubType != null && epubType.contains("toc")) {
-        return nav;
+      if (epubType != null) {
+        for (String token : epubType.trim().split("\\s+")) {
+          if ("toc".equals(token)) {
+            return nav;
+          }
+        }
       }
     }
     return null;
@@ -188,21 +192,39 @@ public class NavDocumentReader {
   }
 
   /**
-   * Decodes a percent-encoded URI reference using RFC 3986 semantics. Unlike {@code URLDecoder},
-   * this does not treat {@code +} as a space character.
+   * Decodes percent-encoded sequences using RFC 3986 semantics. Unlike {@code URLDecoder}, this
+   * does not treat {@code +} as a space character.
    */
   private static String decodeUtf8(String value) {
     if (value == null) {
       return null;
     }
-    try {
-      URI uri = new URI(value);
-      String decoded = uri.getSchemeSpecificPart();
-      String fragment = uri.getFragment();
-      return fragment != null ? decoded + "#" + fragment : decoded;
-    } catch (Exception e) {
-      log.log(System.Logger.Level.DEBUG, "Failed to decode nav href: " + value);
+    if (value.indexOf('%') < 0) {
       return value;
     }
+    byte[] buf = new byte[value.length()];
+    StringBuilder out = new StringBuilder(value.length());
+    int i = 0;
+    while (i < value.length()) {
+      char c = value.charAt(i);
+      if (c != '%') {
+        out.append(c);
+        i++;
+        continue;
+      }
+      int n = 0;
+      while (i + 2 < value.length() && value.charAt(i) == '%') {
+        int hi = Character.digit(value.charAt(i + 1), 16);
+        int lo = Character.digit(value.charAt(i + 2), 16);
+        if (hi < 0 || lo < 0) {
+          log.log(System.Logger.Level.DEBUG, "Failed to decode nav href: " + value);
+          return value;
+        }
+        buf[n++] = (byte) ((hi << 4) + lo);
+        i += 3;
+      }
+      out.append(new String(buf, 0, n, StandardCharsets.UTF_8));
+    }
+    return out.toString();
   }
 }

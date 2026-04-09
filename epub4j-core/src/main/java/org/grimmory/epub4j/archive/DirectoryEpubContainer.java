@@ -134,15 +134,24 @@ public final class DirectoryEpubContainer implements EpubContainer {
 
   /**
    * Resolve a relative entry name to an absolute path that is guaranteed to stay under the
-   * container root. Rejects names containing {@code ../} traversal sequences.
+   * container root. Rejects both {@code ../} traversal and symlink escapes by resolving the real
+   * path of the closest existing ancestor.
    */
   private Path safePath(String name) throws IOException {
-    Path normalizedRoot = root.normalize();
-    Path filePath = normalizedRoot.resolve(name).normalize();
-    if (!filePath.startsWith(normalizedRoot)) {
+    Path realRoot = root.toRealPath();
+    Path candidate = realRoot.resolve(name).normalize();
+    if (!candidate.startsWith(realRoot)) {
       throw new IOException("Path escapes container root: " + name);
     }
-    return filePath;
+    // Walk up to the nearest existing ancestor and verify its real path stays under root.
+    Path check = candidate;
+    while (check != null && !Files.exists(check)) {
+      check = check.getParent();
+    }
+    if (check != null && !check.toRealPath().startsWith(realRoot)) {
+      throw new IOException("Path escapes container root via symlink: " + name);
+    }
+    return candidate;
   }
 
   @Override
