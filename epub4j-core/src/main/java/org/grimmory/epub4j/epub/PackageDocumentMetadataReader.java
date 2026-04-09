@@ -82,6 +82,7 @@ class PackageDocumentMetadataReader extends PackageDocumentBase {
     readEpub3Refinements(metadataElement, result);
     readSeriesMetadata(metadataElement, result);
     readPageCount(metadataElement, result);
+    readRenditionProperties(metadataElement, result);
 
     return result;
   }
@@ -370,6 +371,51 @@ class PackageDocumentMetadataReader extends PackageDocumentBase {
           result.setPageCount(Integer.parseInt(valueToTry));
         } catch (NumberFormatException ignored) {
         }
+      }
+    }
+  }
+
+  /**
+   * Reads EPUB3 rendition and media duration properties from {@code <meta property="...">}
+   * elements. Handles rendition:layout, rendition:orientation, rendition:spread, and
+   * media:duration (total, not per-item).
+   */
+  private static void readRenditionProperties(Element metadataElement, Metadata result) {
+    NodeList metaTags = metadataElement.getElementsByTagName(OPFTags.meta);
+    int metaTagCount = metaTags.getLength();
+
+    for (int i = 0; i < metaTagCount; i++) {
+      Element meta = (Element) metaTags.item(i);
+      String property = meta.getAttribute(OPFAttributes.property);
+      String refines = meta.getAttribute(OPFAttributes.refines);
+      if (StringUtil.isBlank(property)) {
+        continue;
+      }
+      String text = meta.getTextContent().trim();
+
+      switch (property) {
+        case "rendition:layout" -> {
+          if (result.getRenditionLayout() == null) {
+            result.setRenditionLayout(text);
+          }
+        }
+        case "rendition:orientation" -> {
+          if (result.getRenditionOrientation() == null) {
+            result.setRenditionOrientation(text);
+          }
+        }
+        case "rendition:spread" -> {
+          if (result.getRenditionSpread() == null) {
+            result.setRenditionSpread(text);
+          }
+        }
+        case "media:duration" -> {
+          // Only read total duration (no refines), not per-SMIL durations
+          if (StringUtil.isBlank(refines) && result.getMediaDuration() == null) {
+            result.setMediaDuration(text);
+          }
+        }
+        default -> {}
       }
     }
   }

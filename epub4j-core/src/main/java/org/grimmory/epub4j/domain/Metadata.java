@@ -59,6 +59,10 @@ public class Metadata implements Serializable {
   private Float seriesNumber;
   private Integer seriesTotal;
   private Integer pageCount;
+  private String renditionLayout;
+  private String renditionOrientation;
+  private String renditionSpread;
+  private String mediaDuration;
 
   public Metadata() {
     identifiers.add(new Identifier());
@@ -280,5 +284,41 @@ public class Metadata implements Serializable {
 
   public void setPageCount(Integer pageCount) {
     this.pageCount = pageCount;
+  }
+
+  public String getRenditionLayout() {
+    return renditionLayout;
+  }
+
+  public void setRenditionLayout(String renditionLayout) {
+    this.renditionLayout = renditionLayout;
+  }
+
+  public String getRenditionOrientation() {
+    return renditionOrientation;
+  }
+
+  public void setRenditionOrientation(String renditionOrientation) {
+    this.renditionOrientation = renditionOrientation;
+  }
+
+  public String getRenditionSpread() {
+    return renditionSpread;
+  }
+
+  public void setRenditionSpread(String renditionSpread) {
+    this.renditionSpread = renditionSpread;
+  }
+
+  public String getMediaDuration() {
+    return mediaDuration;
+  }
+
+  public void setMediaDuration(String mediaDuration) {
+    this.mediaDuration = mediaDuration;
+  }
+
+  public boolean isFixedLayout() {
+    return "pre-paginated".equals(renditionLayout);
   }
 }

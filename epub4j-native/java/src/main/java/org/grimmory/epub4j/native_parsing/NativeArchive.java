@@ -5,6 +5,8 @@
  */
 package org.grimmory.epub4j.native_parsing;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.nio.file.Path;
@@ -229,6 +231,71 @@ public class NativeArchive implements AutoCloseable {
             throw e;
         } catch (Throwable e) {
             throw new EpubNativeException("Failed to read entry: " + entryPath, e);
+        }
+    }
+
+    /**
+     * Stream a specific entry from the archive directly to an OutputStream.
+     *
+     * <p>Unlike {@link #readEntry(String)}, this method does not allocate the entire
+     * entry content on the Java heap. Instead, libarchive reads in ~10KB blocks and
+     * each block is written directly to the output stream via a Panama upcall.
+     * This keeps memory usage constant regardless of entry size.</p>
+     *
+     * @param entryPath Path of the entry to stream
+     * @param out       OutputStream to write data to
+     * @throws IOException          if writing to the stream fails
+     * @throws EpubNativeException  if the entry is not found or native reading fails
+     */
+    public void streamEntry(String entryPath, OutputStream out) throws IOException {
+        checkOpen();
+
+        if (!nativeAvailable) {
+            throw new EpubNativeException("Native archive library not available");
+        }
+
+        try (Arena callbackArena = Arena.ofConfined()) {
+            MemorySegment entryPathSegment = toNativeString(entryPath, callbackArena);
+
+            // Capture IOExceptions thrown inside the callback
+            IOException[] captured = new IOException[1];
+
+            EpubNativeHeaders.ArchiveReadCallback callback = (data, size, _userData) -> {
+                if (captured[0] != null) {
+                    return; // already failed, skip remaining chunks
+                }
+                try {
+                    // Reinterpret the pointer so we can read 'size' bytes from it
+                    byte[] chunk = data.reinterpret(size).toArray(JAVA_BYTE);
+                    out.write(chunk);
+                } catch (IOException e) {
+                    captured[0] = e;
+                }
+            };
+
+            MemorySegment callbackStub = EpubNativeHeaders.archiveReadCallbackUpcallStub(callback, callbackArena);
+
+            int errorCode = EpubNativeHeaders.epub_native_archive_read_entry_to_callback(
+                archivePointer,
+                entryPathSegment,
+                callbackStub,
+                MemorySegment.NULL
+            );
+
+            // Check for IOException from the callback first
+            if (captured[0] != null) {
+                throw captured[0];
+            }
+
+            if (errorCode == EPUB_NATIVE_ERROR_NOT_FOUND) {
+                throw new EpubNativeException("Entry not found: " + entryPath);
+            }
+            checkError(errorCode);
+
+        } catch (IOException | EpubNativeException e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new EpubNativeException("Failed to stream entry: " + entryPath, e);
         }
     }
 

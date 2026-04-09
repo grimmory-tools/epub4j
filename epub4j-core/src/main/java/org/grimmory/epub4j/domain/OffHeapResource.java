@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serial;
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
@@ -101,6 +102,28 @@ public final class OffHeapResource extends Resource implements AutoCloseable {
       throw new IOException("OffHeapResource has been closed: " + getHref());
     }
     return new MemorySegmentInputStream(segment);
+  }
+
+  /**
+   * Streams the off-heap segment to the output stream in chunks without copying
+   * the entire segment to a byte[] first.
+   */
+  @Override
+  public void writeTo(OutputStream out) throws IOException {
+    if (segment == null) {
+      throw new IOException("OffHeapResource has been closed: " + getHref());
+    }
+    long remaining = segment.byteSize();
+    long offset = 0;
+    int chunkSize = 8192;
+    while (remaining > 0) {
+      int toWrite = (int) Math.min(chunkSize, remaining);
+      byte[] chunk = new byte[toWrite];
+      MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, chunk, 0, toWrite);
+      out.write(chunk, 0, toWrite);
+      offset += toWrite;
+      remaining -= toWrite;
+    }
   }
 
   @Override

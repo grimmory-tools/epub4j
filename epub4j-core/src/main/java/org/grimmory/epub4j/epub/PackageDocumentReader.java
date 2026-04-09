@@ -15,6 +15,7 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -26,6 +27,7 @@ import org.grimmory.epub4j.Constants;
 import org.grimmory.epub4j.domain.Book;
 import org.grimmory.epub4j.domain.Guide;
 import org.grimmory.epub4j.domain.GuideReference;
+import org.grimmory.epub4j.domain.ManifestItemProperties;
 import org.grimmory.epub4j.domain.MediaType;
 import org.grimmory.epub4j.domain.MediaTypes;
 import org.grimmory.epub4j.domain.Resource;
@@ -63,6 +65,15 @@ public class PackageDocumentReader extends PackageDocumentBase {
 
     resources = readManifest(packageDocument, resources, idMapping);
     book.setResources(resources);
+
+    // Detect EPUB3 nav resource from manifest item properties
+    for (Resource r : resources.getAll()) {
+      if (r.hasProperty(ManifestItemProperties.NAV)) {
+        book.setNavResource(r);
+        break;
+      }
+    }
+
     readCover(packageDocument, book);
     book.setMetadata(PackageDocumentMetadataReader.readMetadata(packageDocument));
     book.setSpine(readSpine(packageDocument, book.getResources(), idMapping));
@@ -155,6 +166,34 @@ public class PackageDocumentReader extends PackageDocumentBase {
       if (mediaType != null) {
         resource.setMediaType(mediaType);
       }
+
+      // Parse EPUB3 manifest item properties
+      String propertiesAttr = DOMUtil.getAttribute(itemElement, NAMESPACE_OPF, OPFAttributes.properties);
+      if (propertiesAttr == null || propertiesAttr.isEmpty()) {
+        propertiesAttr = itemElement.getAttribute(OPFAttributes.properties);
+      }
+      if (propertiesAttr != null && !propertiesAttr.isEmpty()) {
+        Set<ManifestItemProperties> props = EnumSet.noneOf(ManifestItemProperties.class);
+        for (String token : propertiesAttr.trim().split("\\s+")) {
+          for (ManifestItemProperties mip : ManifestItemProperties.values()) {
+            if (mip.getName().equals(token)) {
+              props.add(mip);
+              break;
+            }
+          }
+        }
+        resource.setProperties(props);
+      }
+
+      // Parse media-overlay attribute
+      String mediaOverlay = DOMUtil.getAttribute(itemElement, NAMESPACE_OPF, "media-overlay");
+      if (mediaOverlay == null || mediaOverlay.isEmpty()) {
+        mediaOverlay = itemElement.getAttribute("media-overlay");
+      }
+      if (mediaOverlay != null && !mediaOverlay.isEmpty()) {
+        resource.setMediaOverlayId(mediaOverlay);
+      }
+
       result.add(resource);
       idMapping.put(id, resource.getId());
     }
@@ -275,6 +314,16 @@ public class PackageDocumentReader extends PackageDocumentBase {
     Spine result = new Spine();
     String tocResourceId = DOMUtil.getAttribute(spineElement, NAMESPACE_OPF, OPFAttributes.toc);
     result.setTocResource(findTableOfContentsResource(tocResourceId, resources));
+
+    // EPUB3 page-progression-direction
+    String ppd = DOMUtil.getAttribute(spineElement, NAMESPACE_OPF, "page-progression-direction");
+    if (ppd == null || ppd.isEmpty()) {
+      ppd = spineElement.getAttribute("page-progression-direction");
+    }
+    if (ppd != null && !ppd.isEmpty()) {
+      result.setPageProgressionDirection(ppd);
+    }
+
     NodeList spineNodes = packageDocument.getElementsByTagNameNS(NAMESPACE_OPF, OPFTags.itemref);
     int spineNodeCount = spineNodes.getLength();
     List<SpineReference> spineReferences = new ArrayList<>(spineNodeCount);
@@ -495,6 +544,17 @@ public class PackageDocumentReader extends PackageDocumentBase {
    * @param book the book being built
    */
   private static void readCover(Document packageDocument, Book book) {
+
+    // EPUB3: detect cover image via manifest item properties="cover-image"
+    if (book.getCoverImage() == null) {
+      for (Resource r : book.getResources().getAll()) {
+        if (r.hasProperty(ManifestItemProperties.COVER_IMAGE)
+            && MediaTypes.isBitmapImage(r.getMediaType())) {
+          book.setCoverImage(r);
+          break;
+        }
+      }
+    }
 
     Collection<String> coverHrefs = findCoverHrefs(packageDocument);
     for (String coverHref : coverHrefs) {

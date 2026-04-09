@@ -6,12 +6,14 @@
 package org.grimmory.epub4j.archive;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 import org.grimmory.epub4j.domain.MediaType;
@@ -22,17 +24,22 @@ import org.w3c.dom.Document;
 /**
  * ZIP-based EPUB container implementation. Handles EPUB files stored as ZIP archives.
  *
+ * <p>Uses random-access {@link ZipFile} for lazy entry reading instead of loading
+ * all entries into memory eagerly. Only modified entries are held in a dirty cache.</p>
+ *
  * @author Grimmory
  */
 public final class ZipEpubContainer implements EpubContainer {
 
   private final Path path;
-  private final Map<String, byte[]> fileCache;
-  private final Map<String, MediaType> mimeMap;
-  private final Set<String> dirtyFiles;
+  private final Map<String, byte[]> dirtyCache;
+  private final Set<String> deletedEntries;
+  private ZipFile zipFile;
+  private List<String> entryNames;
   private String opfName;
   private String epubVersion;
   private boolean closed;
+  private boolean createdNew;
 
   /**
    * Open an existing EPUB ZIP file.
@@ -53,9 +60,8 @@ public final class ZipEpubContainer implements EpubContainer {
    */
   public ZipEpubContainer(Path path, boolean create) throws IOException {
     this.path = path;
-    this.fileCache = new LinkedHashMap<>();
-    this.mimeMap = new LinkedHashMap<>();
-    this.dirtyFiles = new HashSet<>();
+    this.dirtyCache = new LinkedHashMap<>();
+    this.deletedEntries = new HashSet<>();
 
     if (create) {
       createDefaultEpub();
@@ -86,9 +92,10 @@ public final class ZipEpubContainer implements EpubContainer {
   }
 
   private void createDefaultEpub() {
+    this.createdNew = true;
+
     // Create mimetype
-    fileCache.put("mimetype", "application/epub+zip".getBytes(StandardCharsets.UTF_8));
-    mimeMap.put("mimetype", MediaTypes.EPUB);
+    dirtyCache.put("mimetype", "application/epub+zip".getBytes(StandardCharsets.UTF_8));
 
     // Create META-INF/container.xml
     String containerXml =
@@ -99,8 +106,7 @@ public final class ZipEpubContainer implements EpubContainer {
                     <rootfile full-path="OEBPS/content.opf" media-type="application/oebps-package+xml"/>
                   </rootfiles>
                 </container>""";
-    fileCache.put("META-INF/container.xml", containerXml.getBytes(StandardCharsets.UTF_8));
-    mimeMap.put("META-INF/container.xml", MediaTypes.determineMediaType("container.xml"));
+    dirtyCache.put("META-INF/container.xml", containerXml.getBytes(StandardCharsets.UTF_8));
 
     // Create minimal OPF
     String opfXml =
@@ -115,24 +121,21 @@ public final class ZipEpubContainer implements EpubContainer {
                   <manifest/>
                   <spine/>
                 </package>""";
-    fileCache.put("OEBPS/content.opf", opfXml.getBytes(StandardCharsets.UTF_8));
-    mimeMap.put("OEBPS/content.opf", MediaTypes.determineMediaType("content.opf"));
+    dirtyCache.put("OEBPS/content.opf", opfXml.getBytes(StandardCharsets.UTF_8));
 
+    this.entryNames = new ArrayList<>(dirtyCache.keySet());
     opfName = "OEBPS/content.opf";
     epubVersion = "3.0";
   }
 
   private void loadFromZip() throws IOException {
-    try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(path))) {
-      ZipEntry entry;
-      while ((entry = zis.getNextEntry()) != null) {
-        if (!entry.isDirectory()) {
-          String name = entry.getName();
-          byte[] data = zis.readAllBytes();
-          fileCache.put(name, data);
-          mimeMap.put(name, MediaTypes.determineMediaType(name));
-        }
-        zis.closeEntry();
+    this.zipFile = new ZipFile(path.toFile());
+    this.entryNames = new ArrayList<>();
+    Enumeration<? extends ZipEntry> entries = zipFile.entries();
+    while (entries.hasMoreElements()) {
+      ZipEntry entry = entries.nextElement();
+      if (!entry.isDirectory()) {
+        entryNames.add(entry.getName());
       }
     }
 
@@ -141,8 +144,8 @@ public final class ZipEpubContainer implements EpubContainer {
     determineEpubVersion();
   }
 
-  private void findOpfName() {
-    byte[] containerData = fileCache.get("META-INF/container.xml");
+  private void findOpfName() throws IOException {
+    byte[] containerData = readBytesInternal("META-INF/container.xml");
     if (containerData == null) {
       opfName = "OEBPS/content.opf"; // Default
       return;
@@ -161,8 +164,8 @@ public final class ZipEpubContainer implements EpubContainer {
     opfName = "OEBPS/content.opf"; // Default
   }
 
-  private void determineEpubVersion() {
-    byte[] opfData = fileCache.get(opfName);
+  private void determineEpubVersion() throws IOException {
+    byte[] opfData = readBytesInternal(opfName);
     if (opfData == null) {
       epubVersion = "3.0"; // Default
       return;
@@ -180,10 +183,31 @@ public final class ZipEpubContainer implements EpubContainer {
     }
   }
 
+  /**
+   * Read bytes from the dirty cache first, then from the ZipFile.
+   * Returns null if the entry does not exist.
+   */
+  private byte[] readBytesInternal(String name) throws IOException {
+    byte[] cached = dirtyCache.get(name);
+    if (cached != null) {
+      return cached;
+    }
+    if (zipFile == null) {
+      return null;
+    }
+    ZipEntry entry = zipFile.getEntry(name);
+    if (entry == null) {
+      return null;
+    }
+    try (InputStream is = zipFile.getInputStream(entry)) {
+      return is.readAllBytes();
+    }
+  }
+
   @Override
   public byte[] readBytes(String name) throws IOException {
     checkOpen();
-    byte[] data = fileCache.get(name);
+    byte[] data = readBytesInternal(name);
     if (data == null) {
       throw new IOException("File not found: " + name);
     }
@@ -193,25 +217,33 @@ public final class ZipEpubContainer implements EpubContainer {
   @Override
   public void writeBytes(String name, byte[] data) {
     checkOpen();
-    fileCache.put(name, data.clone());
-    mimeMap.put(name, MediaTypes.determineMediaType(name));
-    markDirty(name);
+    dirtyCache.put(name, data.clone());
+    deletedEntries.remove(name);
+    if (!entryNames.contains(name)) {
+      entryNames.add(name);
+    }
   }
 
   @Override
   public boolean exists(String name) {
-    return fileCache.containsKey(name);
+    if (deletedEntries.contains(name)) {
+      return false;
+    }
+    if (dirtyCache.containsKey(name)) {
+      return true;
+    }
+    return entryNames.contains(name);
   }
 
   @Override
   public void delete(String name) throws IOException {
     checkOpen();
-    if (!fileCache.containsKey(name)) {
+    if (!exists(name)) {
       throw new IOException("File not found: " + name);
     }
-    fileCache.remove(name);
-    mimeMap.remove(name);
-    dirtyFiles.add(name);
+    dirtyCache.remove(name);
+    entryNames.remove(name);
+    deletedEntries.add(name);
   }
 
   @Override
@@ -244,17 +276,33 @@ public final class ZipEpubContainer implements EpubContainer {
 
   @Override
   public void markDirty(String name) {
-    dirtyFiles.add(name);
+    // For the lazy container, markDirty loads the entry into dirtyCache if not already there
+    if (!dirtyCache.containsKey(name)) {
+      try {
+        byte[] data = readBytesInternal(name);
+        if (data != null) {
+          dirtyCache.put(name, data);
+        }
+      } catch (IOException e) {
+        // Entry will be loaded on next readBytes call
+      }
+    }
   }
 
   @Override
   public MediaType getMimeType(String name) {
-    return mimeMap.getOrDefault(name, MediaTypes.determineMediaType(name));
+    return MediaTypes.determineMediaType(name);
   }
 
   @Override
   public Map<String, MediaType> getMimeMap() {
-    return Collections.unmodifiableMap(new LinkedHashMap<>(mimeMap));
+    Map<String, MediaType> result = new LinkedHashMap<>();
+    for (String name : entryNames) {
+      if (!deletedEntries.contains(name)) {
+        result.put(name, MediaTypes.determineMediaType(name));
+      }
+    }
+    return Collections.unmodifiableMap(result);
   }
 
   @Override
@@ -264,15 +312,21 @@ public final class ZipEpubContainer implements EpubContainer {
 
   @Override
   public List<String> listAllFiles() {
-    return List.copyOf(fileCache.keySet());
+    List<String> result = new ArrayList<>();
+    for (String name : entryNames) {
+      if (!deletedEntries.contains(name)) {
+        result.add(name);
+      }
+    }
+    return List.copyOf(result);
   }
 
   @Override
   public List<String> listFiles(String pattern) {
     List<String> result = new ArrayList<>();
     String regex = pattern.replace(".", "\\.").replace("*", ".*");
-    for (String name : fileCache.keySet()) {
-      if (name.matches(regex)) {
+    for (String name : entryNames) {
+      if (!deletedEntries.contains(name) && name.matches(regex)) {
         result.add(name);
       }
     }
@@ -287,7 +341,7 @@ public final class ZipEpubContainer implements EpubContainer {
   @Override
   public void commit() throws IOException {
     checkOpen();
-    if (dirtyFiles.isEmpty() && Files.exists(path)) {
+    if (dirtyCache.isEmpty() && deletedEntries.isEmpty() && !createdNew && Files.exists(path)) {
       return; // No changes to save
     }
 
@@ -295,37 +349,57 @@ public final class ZipEpubContainer implements EpubContainer {
     Path tempFile = Files.createTempFile("epub-", ".epub");
     try {
       try (ZipOutputStream zos = new ZipOutputStream(Files.newOutputStream(tempFile))) {
+        // Collect all entry names in order
+        Set<String> written = new HashSet<>();
+
         // Write mimetype first (uncompressed, must be first)
-        ZipEntry mimetypeEntry = new ZipEntry("mimetype");
-        mimetypeEntry.setMethod(ZipEntry.STORED);
-        byte[] mimetypeData = fileCache.get("mimetype");
+        byte[] mimetypeData = readBytesInternal("mimetype");
         if (mimetypeData == null) {
           mimetypeData = "application/epub+zip".getBytes(StandardCharsets.UTF_8);
         }
+        ZipEntry mimetypeEntry = new ZipEntry("mimetype");
+        mimetypeEntry.setMethod(ZipEntry.STORED);
         mimetypeEntry.setSize(mimetypeData.length);
         mimetypeEntry.setCrc(calculateCrc(mimetypeData));
         zos.putNextEntry(mimetypeEntry);
         zos.write(mimetypeData);
         zos.closeEntry();
+        written.add("mimetype");
 
-        // Write all other entries
-        for (Map.Entry<String, byte[]> entry : fileCache.entrySet()) {
-          String name = entry.getKey();
-          if ("mimetype".equals(name)) {
-            continue; // Already written
+        // Write all entries (dirty cache takes priority over zipFile)
+        for (String name : entryNames) {
+          if ("mimetype".equals(name) || deletedEntries.contains(name) || written.contains(name)) {
+            continue;
+          }
+
+          byte[] data = readBytesInternal(name);
+          if (data == null) {
+            continue;
           }
 
           ZipEntry zipEntry = new ZipEntry(name);
           zipEntry.setMethod(ZipEntry.DEFLATED);
           zos.putNextEntry(zipEntry);
-          zos.write(entry.getValue());
+          zos.write(data);
           zos.closeEntry();
+          written.add(name);
         }
+      }
+
+      // Close the old ZipFile before replacing the file
+      if (zipFile != null) {
+        zipFile.close();
+        zipFile = null;
       }
 
       // Replace original file
       Files.move(tempFile, path, StandardCopyOption.REPLACE_EXISTING);
-      dirtyFiles.clear();
+
+      // Re-open the ZipFile for continued lazy reading
+      dirtyCache.clear();
+      deletedEntries.clear();
+      createdNew = false;
+      loadFromZip();
 
     } finally {
       Files.deleteIfExists(tempFile);
@@ -334,7 +408,7 @@ public final class ZipEpubContainer implements EpubContainer {
 
   @Override
   public boolean hasChanges() {
-    return !dirtyFiles.isEmpty();
+    return !dirtyCache.isEmpty() || !deletedEntries.isEmpty() || createdNew;
   }
 
   @Override
@@ -348,9 +422,18 @@ public final class ZipEpubContainer implements EpubContainer {
       return;
     }
     closed = true;
-    fileCache.clear();
-    mimeMap.clear();
-    dirtyFiles.clear();
+    dirtyCache.clear();
+    deletedEntries.clear();
+    if (zipFile != null) {
+      try {
+        zipFile.close();
+      } catch (IOException ignored) {
+      }
+      zipFile = null;
+    }
+    if (entryNames != null) {
+      entryNames.clear();
+    }
   }
 
   private void checkOpen() {
