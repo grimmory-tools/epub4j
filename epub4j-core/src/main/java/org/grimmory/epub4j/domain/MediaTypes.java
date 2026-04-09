@@ -46,16 +46,28 @@ public class MediaTypes {
   public static final MediaType SVG = new MediaType("image/svg+xml", ".svg");
 
   // fonts
-  public static final MediaType TTF = new MediaType("application/x-truetype-font", ".ttf");
-  public static final MediaType OPENTYPE = new MediaType("application/vnd.ms-opentype", ".otf");
-  public static final MediaType WOFF = new MediaType("application/font-woff", ".woff");
+  public static final MediaType TTF = new MediaType("font/ttf", ".ttf");
+  public static final MediaType OPENTYPE = new MediaType("font/otf", ".otf");
+  public static final MediaType WOFF = new MediaType("font/woff", ".woff");
+  public static final MediaType WOFF2 = new MediaType("font/woff2", ".woff2");
 
   // audio
   public static final MediaType MP3 = new MediaType("audio/mpeg", ".mp3");
   public static final MediaType OGG = new MediaType("audio/ogg", ".ogg");
+  public static final MediaType AAC = new MediaType("audio/aac", ".aac");
+  public static final MediaType M4A =
+      new MediaType("audio/mp4", ".m4a", new String[] {".m4a", ".m4b"});
+  public static final MediaType WAV = new MediaType("audio/wav", ".wav");
+  public static final MediaType FLAC = new MediaType("audio/flac", ".flac");
+  public static final MediaType WEBM_AUDIO = new MediaType("audio/webm", ".weba");
 
   // video
   public static final MediaType MP4 = new MediaType("video/mp4", ".mp4");
+  public static final MediaType WEBM = new MediaType("video/webm", ".webm");
+
+  // images (additional)
+  public static final MediaType WEBP = new MediaType("image/webp", ".webp");
+  public static final MediaType AVIF = new MediaType("image/avif", ".avif");
 
   public static final MediaType SMIL = new MediaType("application/smil+xml", ".smil");
   public static final MediaType XPGT =
@@ -75,12 +87,21 @@ public class MediaTypes {
     XPGT,
     OPENTYPE,
     WOFF,
+    WOFF2,
     SMIL,
     PLS,
     JAVASCRIPT,
     MP3,
     MP4,
-    OGG
+    OGG,
+    AAC,
+    M4A,
+    WAV,
+    FLAC,
+    WEBM_AUDIO,
+    WEBM,
+    WEBP,
+    AVIF
   };
 
   public static final Map<String, MediaType> mediaTypesByName = new HashMap<>();
@@ -89,10 +110,19 @@ public class MediaTypes {
     for (MediaType mediaType : mediaTypes) {
       mediaTypesByName.put(mediaType.name(), mediaType);
     }
+    // Legacy/alias MIME types mapping to the EPUB3 canonical types
+    mediaTypesByName.put("application/x-truetype-font", TTF);
+    mediaTypesByName.put("application/vnd.ms-opentype", OPENTYPE);
+    mediaTypesByName.put("application/font-woff", WOFF);
+    mediaTypesByName.put("application/font-woff2", WOFF2);
   }
 
   public static boolean isBitmapImage(MediaType mediaType) {
-    return mediaType == JPG || mediaType == PNG || mediaType == GIF;
+    return mediaType == JPG
+        || mediaType == PNG
+        || mediaType == GIF
+        || mediaType == WEBP
+        || mediaType == AVIF;
   }
 
   /**

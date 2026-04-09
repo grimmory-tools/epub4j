@@ -11,6 +11,8 @@
 package org.grimmory.epub4j.domain;
 
 import java.io.*;
+import java.util.EnumSet;
+import java.util.Set;
 import org.grimmory.epub4j.Constants;
 import org.grimmory.epub4j.util.IOUtil;
 import org.grimmory.epub4j.util.StringUtil;
@@ -32,6 +34,8 @@ public sealed class Resource implements Serializable permits LazyResource, OffHe
   private MediaType mediaType;
   private String inputEncoding = Constants.CHARACTER_ENCODING;
   protected byte[] data;
+  private Set<ManifestItemProperties> properties = EnumSet.noneOf(ManifestItemProperties.class);
+  private String mediaOverlayId;
 
   /**
    * Creates an empty Resource with the given href.
@@ -168,6 +172,17 @@ public sealed class Resource implements Serializable permits LazyResource, OffHe
    */
   public byte[] getData() throws IOException {
     return data;
+  }
+
+  /**
+   * Writes the resource contents to the given OutputStream. Subclasses override to stream data
+   * without materializing the full byte[] on-heap.
+   *
+   * @param out the output stream to write to
+   * @throws IOException if an I/O error occurs
+   */
+  public void writeTo(OutputStream out) throws IOException {
+    out.write(getData());
   }
 
   /**
@@ -316,6 +331,27 @@ public sealed class Resource implements Serializable permits LazyResource, OffHe
 
   public void setTitle(String title) {
     this.title = title;
+  }
+
+  public Set<ManifestItemProperties> getProperties() {
+    return properties;
+  }
+
+  public void setProperties(Set<ManifestItemProperties> properties) {
+    this.properties =
+        properties != null ? properties : EnumSet.noneOf(ManifestItemProperties.class);
+  }
+
+  public boolean hasProperty(ManifestItemProperties property) {
+    return properties.contains(property);
+  }
+
+  public String getMediaOverlayId() {
+    return mediaOverlayId;
+  }
+
+  public void setMediaOverlayId(String mediaOverlayId) {
+    this.mediaOverlayId = mediaOverlayId;
   }
 
   public String toString() {

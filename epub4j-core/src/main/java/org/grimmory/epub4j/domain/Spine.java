@@ -38,6 +38,7 @@ public class Spine implements Serializable {
   @Serial private static final long serialVersionUID = 3878483958947357246L;
   private Resource tocResource;
   private List<SpineReference> spineReferences;
+  private String pageProgressionDirection;
 
   public Spine() {
     this(new ArrayList<>());
@@ -195,5 +196,18 @@ public class Spine implements Serializable {
    */
   public boolean isEmpty() {
     return spineReferences.isEmpty();
+  }
+
+  /**
+   * The page progression direction for this spine (ltr, rtl, or default).
+   *
+   * @return the page-progression-direction value, or null if not set.
+   */
+  public String getPageProgressionDirection() {
+    return pageProgressionDirection;
+  }
+
+  public void setPageProgressionDirection(String pageProgressionDirection) {
+    this.pageProgressionDirection = pageProgressionDirection;
   }
 }

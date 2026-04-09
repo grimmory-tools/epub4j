@@ -7,6 +7,7 @@ package org.grimmory.comic4j.archive;
 
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 /**
  * Filters out non-content entries commonly found in comic archives: macOS resource forks, system
@@ -15,6 +16,7 @@ import java.util.Set;
 public final class EntryFilter {
 
   private static final Set<String> SYSTEM_FILES = Set.of(".ds_store", "thumbs.db", "desktop.ini");
+  private static final Pattern PATH_SEPARATOR_PATTERN = Pattern.compile("[/\\\\]+");
 
   private EntryFilter() {}
 
@@ -25,7 +27,7 @@ public final class EntryFilter {
     }
 
     // Reject path traversal: any path segment equal to ".."
-    for (String segment : entryName.split("[/\\\\]+")) {
+    for (String segment : PATH_SEPARATOR_PATTERN.split(entryName)) {
       if ("..".equals(segment)) {
         return false;
       }

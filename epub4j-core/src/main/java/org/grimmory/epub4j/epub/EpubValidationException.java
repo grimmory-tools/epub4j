@@ -6,13 +6,14 @@
 package org.grimmory.epub4j.epub;
 
 import java.io.IOException;
+import java.io.Serial;
 import java.util.ArrayList;
 import java.util.List;
 
 /** Thrown when strict EPUB validation fails before parsing begins. */
 public class EpubValidationException extends IOException {
 
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
 
   private final List<EpubValidator.ValidationIssue> issues;
 

@@ -549,8 +549,18 @@ public class EpubReader {
       return null;
     }
 
+    // Prefer EPUB3 nav document over NCX for table of contents.
+    // Fall through to NCX regardless to obtain the ncxResource handle.
+    boolean navParsed = book.getNavResource() != null && NavDocumentReader.read(book);
+
     Resource ncxResource = NCXDocument.read(book, this);
-    if (book.getTableOfContents().size() == 0 && !book.getSpine().isEmpty()) {
+
+    // If nav parsing already populated the TOC, keep it
+    if (navParsed && book.getTableOfContents().size() > 0) {
+      return ncxResource;
+    }
+
+    if (!book.getSpine().isEmpty()) {
       String message = "Table of contents resource could not be parsed into a usable TOC";
       if (strictMode) {
         throw new IOException(IngestionCode.TOC_INVALID + ": " + message);

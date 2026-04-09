@@ -19,6 +19,7 @@
 package org.grimmory.epub4j.util;
 
 import java.awt.Desktop;
+import java.io.Serial;
 import java.net.URL;
 
 public class DesktopUtil {
@@ -40,7 +41,7 @@ public class DesktopUtil {
 
   public static class BrowserLaunchException extends Exception {
 
-    private static final long serialVersionUID = 1L;
+    @Serial private static final long serialVersionUID = 1L;
 
     private BrowserLaunchException(String message, Throwable cause) {
       super(message, cause);

@@ -13,6 +13,7 @@ package org.grimmory.epub4j.domain;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serial;
 import org.grimmory.epub4j.util.IOUtil;
 
@@ -74,6 +75,21 @@ public final class LazyResource extends Resource {
   @Override
   public InputStream asInputStream() throws IOException {
     return resourceProvider.getResourceStream(this.originalHref);
+  }
+
+  /**
+   * Streams the resource contents directly from the provider to the output stream, without
+   * materializing the full byte[] on-heap.
+   */
+  @Override
+  public void writeTo(OutputStream out) throws IOException {
+    if (isInitialized()) {
+      out.write(getData());
+      return;
+    }
+    try (InputStream in = resourceProvider.getResourceStream(this.originalHref)) {
+      in.transferTo(out);
+    }
   }
 
   /**

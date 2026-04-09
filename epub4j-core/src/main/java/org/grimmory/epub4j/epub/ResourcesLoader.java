@@ -374,6 +374,15 @@ public class ResourcesLoader {
 
       if (FilenameValidator.isSystemFile(name)) continue;
 
+      if (!FilenameValidator.isSafeEntryName(name)) {
+        warnings.add(
+            new EpubReader.IngestionWarning(
+                EpubReader.IngestionCode.RESOURCE_UNSAFE_PATH,
+                "Recovered entry has unsafe path: " + name,
+                name));
+        continue;
+      }
+
       String normalizedPath = normalizeEntryPathKey(name);
       if (!seenPaths.add(normalizedPath)) continue;
 

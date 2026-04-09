@@ -6,6 +6,7 @@
 package org.grimmory.epub4j.archive;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -131,10 +132,38 @@ public final class DirectoryEpubContainer implements EpubContainer {
     }
   }
 
+  /**
+   * Resolve a relative entry name to an absolute path that is guaranteed to stay under the
+   * container root. Rejects both {@code ../} traversal and symlink escapes by resolving the real
+   * path of the closest existing ancestor.
+   */
+  private Path safePath(String name) throws IOException {
+    if (name == null || name.isBlank()) {
+      throw new IOException("Path must reference an entry");
+    }
+    Path realRoot = root.toRealPath();
+    Path candidate = realRoot.resolve(name).normalize();
+    if (candidate.equals(realRoot)) {
+      throw new IOException("Path resolves to container root: " + name);
+    }
+    if (!candidate.startsWith(realRoot)) {
+      throw new IOException("Path escapes container root: " + name);
+    }
+    // Walk up to the nearest existing ancestor and verify its real path stays under root.
+    Path check = candidate;
+    while (check != null && !Files.exists(check)) {
+      check = check.getParent();
+    }
+    if (check != null && !check.toRealPath().startsWith(realRoot)) {
+      throw new IOException("Path escapes container root via symlink: " + name);
+    }
+    return candidate;
+  }
+
   @Override
   public byte[] readBytes(String name) throws IOException {
     checkOpen();
-    Path filePath = root.resolve(name);
+    Path filePath = safePath(name);
     if (!Files.exists(filePath)) {
       throw new IOException("File not found: " + name);
     }
@@ -142,9 +171,20 @@ public final class DirectoryEpubContainer implements EpubContainer {
   }
 
   @Override
+  public void streamTo(String name, OutputStream out) throws IOException {
+    checkOpen();
+    Path filePath = safePath(name);
+    if (!Files.exists(filePath)) {
+      throw new IOException("File not found: " + name);
+    }
+    Files.copy(filePath, out);
+  }
+
+  @Override
   public void writeBytes(String name, byte[] data) throws IOException {
     checkOpen();
-    Path filePath = root.resolve(name);
+    Path filePath = safePath(name);
+    String entryName = root.toRealPath().relativize(filePath).toString().replace('\\', '/');
 
     // Create parent directories if needed
     Path parent = filePath.getParent();
@@ -153,26 +193,31 @@ public final class DirectoryEpubContainer implements EpubContainer {
     }
 
     Files.write(filePath, data);
-    mimeMap.put(name, MediaTypes.determineMediaType(name));
-    markDirty(name);
+    mimeMap.put(entryName, MediaTypes.determineMediaType(entryName));
+    markDirty(entryName);
   }
 
   @Override
   public boolean exists(String name) {
-    Path filePath = root.resolve(name);
-    return Files.exists(filePath);
+    try {
+      Path filePath = safePath(name);
+      return Files.exists(filePath);
+    } catch (IOException e) {
+      return false;
+    }
   }
 
   @Override
   public void delete(String name) throws IOException {
     checkOpen();
-    Path filePath = root.resolve(name);
+    Path filePath = safePath(name);
+    String entryName = root.toRealPath().relativize(filePath).toString().replace('\\', '/');
     if (!Files.exists(filePath)) {
       throw new IOException("File not found: " + name);
     }
     Files.delete(filePath);
-    mimeMap.remove(name);
-    dirtyFiles.add(name);
+    mimeMap.remove(entryName);
+    dirtyFiles.add(entryName);
   }
 
   @Override

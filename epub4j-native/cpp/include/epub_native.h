@@ -453,7 +453,7 @@ EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry(
  * @param size Size of data block
  * @param user_data User-provided context
  */
-typedef void (*epub_native_archive_read_callback)(const void* data, size_t size, void* user_data);
+typedef int (*epub_native_archive_read_callback)(const void* data, size_t size, void* user_data);
 
 /**
  * Read an archive entry via callback (streaming)

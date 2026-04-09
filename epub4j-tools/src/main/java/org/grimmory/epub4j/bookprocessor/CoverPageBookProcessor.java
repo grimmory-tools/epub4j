@@ -73,7 +73,7 @@ public class CoverPageBookProcessor implements BookProcessor {
         return book;
       } else { // coverImage != null
         if (StringUtils.isBlank(coverImage.getHref())) {
-          coverImage.setHref(getCoverImageHref());
+          coverImage.setHref(DEFAULT_COVER_IMAGE_HREF);
         }
         String coverPageHtml =
             createCoverpageHtml(CollectionUtil.first(metadata.getTitles()), coverImage.getHref());
@@ -81,7 +81,7 @@ public class CoverPageBookProcessor implements BookProcessor {
             new Resource(
                 null,
                 coverPageHtml.getBytes(StandardCharsets.UTF_8),
-                getCoverPageHref(),
+                DEFAULT_COVER_PAGE_HREF,
                 MediaTypes.XHTML);
         fixCoverResourceId(book, coverPage, DEFAULT_COVER_PAGE_ID);
       }

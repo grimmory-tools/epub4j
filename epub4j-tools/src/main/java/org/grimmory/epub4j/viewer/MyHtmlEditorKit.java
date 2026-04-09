@@ -19,11 +19,7 @@
 package org.grimmory.epub4j.viewer;
 
 import java.awt.Cursor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 import javax.accessibility.AccessibleContext;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
@@ -45,7 +41,7 @@ import javax.swing.text.html.StyleSheet;
  * @author paul.siegmann
  */
 class MyHtmlEditorKit extends HTMLEditorKit {
-  private static final long serialVersionUID = 1L;
+  @Serial private static final long serialVersionUID = 1L;
   private final HTMLEditorKit htmlEditorKit;
 
   public MyHtmlEditorKit(HTMLEditorKit htmlEditorKit) {

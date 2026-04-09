@@ -185,7 +185,7 @@ public class CssOptimizer implements BookProcessor {
     while (elementMatcher.find()) {
       String element = elementMatcher.group(1).toLowerCase();
       // Skip CSS pseudo-classes and universal selectors
-      if (element.equals("not") || element.equals("nth") || element.equals("has")) {
+      if ("not".equals(element) || "nth".equals(element) || "has".equals(element)) {
         continue;
       }
       if (!usedElements.contains(element)) {

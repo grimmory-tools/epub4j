@@ -1738,6 +1738,94 @@ public class EpubNativeHeaders extends EpubNativeHeaders$shared {
     }
 
     // ========================================================================
+    // Archive Streaming (callback-based)
+    // ========================================================================
+
+    /**
+     * Callback function type for streaming archive entry data.
+     * {@snippet lang=c :
+     * typedef void (*epub_native_archive_read_callback)(const void* data, size_t size, void* user_data);
+     * }
+     */
+    @FunctionalInterface
+    public interface ArchiveReadCallback {
+        int invoke(MemorySegment data, long size, MemorySegment userData);
+    }
+
+    /**
+     * Function descriptor for the archive read callback:
+     * {@snippet lang=c :
+     * void callback(const void* data, size_t size, void* user_data)
+     * }
+     */
+    public static final FunctionDescriptor ARCHIVE_READ_CALLBACK_DESC = FunctionDescriptor.of(
+        C_INT,
+        C_POINTER, C_LONG_LONG, C_POINTER
+    );
+
+    /**
+     * Creates an upcall stub for an {@link ArchiveReadCallback} so it can be passed to native code.
+     *
+     * @param callback the Java callback implementation
+     * @param arena the arena to allocate the stub in (stub lifetime is tied to arena)
+     * @return a native function pointer that can be passed to native code
+     */
+    public static MemorySegment archiveReadCallbackUpcallStub(ArchiveReadCallback callback, Arena arena) {
+        MethodHandle handle = upcallHandle(ArchiveReadCallback.class, "invoke", ARCHIVE_READ_CALLBACK_DESC);
+        return Linker.nativeLinker().upcallStub(handle.bindTo(callback), ARCHIVE_READ_CALLBACK_DESC, arena);
+    }
+
+    private static class epub_native_archive_read_entry_to_callback {
+        public static final FunctionDescriptor DESC = FunctionDescriptor.of(
+            C_INT,
+            C_POINTER,
+            C_POINTER,
+            C_POINTER,
+            C_POINTER
+        );
+
+        public static final MemorySegment ADDR = SYMBOL_LOOKUP.findOrThrow("epub_native_archive_read_entry_to_callback");
+
+        public static final MethodHandle HANDLE = Linker.nativeLinker().downcallHandle(ADDR, DESC);
+    }
+
+    public static FunctionDescriptor epub_native_archive_read_entry_to_callback$descriptor() {
+        return epub_native_archive_read_entry_to_callback.DESC;
+    }
+
+    public static MethodHandle epub_native_archive_read_entry_to_callback$handle() {
+        return epub_native_archive_read_entry_to_callback.HANDLE;
+    }
+
+    public static MemorySegment epub_native_archive_read_entry_to_callback$address() {
+        return epub_native_archive_read_entry_to_callback.ADDR;
+    }
+
+    /**
+     * {@snippet lang=c :
+     * EpubNativeError epub_native_archive_read_entry_to_callback(
+     *     EpubNativeArchive* archive,
+     *     const char* entry_path,
+     *     epub_native_archive_read_callback callback,
+     *     void* user_data
+     * )
+     * }
+     */
+    public static int epub_native_archive_read_entry_to_callback(MemorySegment archive, MemorySegment entryPath, MemorySegment callback, MemorySegment userData) {
+        var mh$ = epub_native_archive_read_entry_to_callback.HANDLE;
+        try {
+            if (TRACE_DOWNCALLS) {
+                traceDowncall("epub_native_archive_read_entry_to_callback", archive, entryPath, callback, userData);
+            }
+            return (int)mh$.invokeExact(archive, entryPath, callback, userData);
+        } catch (Error | RuntimeException ex) {
+           throw ex;
+        } catch (Throwable ex$) {
+           throw new AssertionError("should not reach here", ex$);
+        }
+    }
+
+    // ========================================================================
     // Image Processing
     // ========================================================================
 

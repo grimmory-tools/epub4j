@@ -402,7 +402,10 @@ EPUB_NATIVE_API EpubNativeError epub_native_archive_read_entry_to_callback(
 
         while ((r = archive_read_data_block(
                 archive_wrapper->archive, &buff, &size, &offset)) == ARCHIVE_OK) {
-            callback(buff, size, user_data);
+            if (callback(buff, size, user_data) != 0) {
+                set_error("Callback aborted read");
+                return EPUB_NATIVE_ERROR_IO;
+            }
         }
 
         if (r != ARCHIVE_EOF) {

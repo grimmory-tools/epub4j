@@ -67,6 +67,7 @@ public class Book implements Serializable {
   private Resource opfResource;
   private Resource ncxResource;
   private Resource coverImage;
+  private Resource navResource;
 
   public void addSection(TOCReference parentSection, String sectionTitle, Resource resource) {
     addSection(parentSection, sectionTitle, resource, null);
@@ -299,5 +300,13 @@ public class Book implements Serializable {
 
   public Resource getNcxResource() {
     return ncxResource;
+  }
+
+  public Resource getNavResource() {
+    return navResource;
+  }
+
+  public void setNavResource(Resource navResource) {
+    this.navResource = navResource;
   }
 }
