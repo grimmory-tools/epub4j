@@ -138,8 +138,14 @@ public final class DirectoryEpubContainer implements EpubContainer {
    * path of the closest existing ancestor.
    */
   private Path safePath(String name) throws IOException {
+    if (name == null || name.isBlank()) {
+      throw new IOException("Path must reference an entry");
+    }
     Path realRoot = root.toRealPath();
     Path candidate = realRoot.resolve(name).normalize();
+    if (candidate.equals(realRoot)) {
+      throw new IOException("Path resolves to container root: " + name);
+    }
     if (!candidate.startsWith(realRoot)) {
       throw new IOException("Path escapes container root: " + name);
     }
@@ -178,6 +184,7 @@ public final class DirectoryEpubContainer implements EpubContainer {
   public void writeBytes(String name, byte[] data) throws IOException {
     checkOpen();
     Path filePath = safePath(name);
+    String entryName = root.toRealPath().relativize(filePath).toString().replace('\\', '/');
 
     // Create parent directories if needed
     Path parent = filePath.getParent();
@@ -186,8 +193,8 @@ public final class DirectoryEpubContainer implements EpubContainer {
     }
 
     Files.write(filePath, data);
-    mimeMap.put(name, MediaTypes.determineMediaType(name));
-    markDirty(name);
+    mimeMap.put(entryName, MediaTypes.determineMediaType(entryName));
+    markDirty(entryName);
   }
 
   @Override
@@ -204,12 +211,13 @@ public final class DirectoryEpubContainer implements EpubContainer {
   public void delete(String name) throws IOException {
     checkOpen();
     Path filePath = safePath(name);
+    String entryName = root.toRealPath().relativize(filePath).toString().replace('\\', '/');
     if (!Files.exists(filePath)) {
       throw new IOException("File not found: " + name);
     }
     Files.delete(filePath);
-    mimeMap.remove(name);
-    dirtyFiles.add(name);
+    mimeMap.remove(entryName);
+    dirtyFiles.add(entryName);
   }
 
   @Override
