@@ -5,7 +5,6 @@
  */
 package org.grimmory.epub4j.epub;
 
-import java.io.IOException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
