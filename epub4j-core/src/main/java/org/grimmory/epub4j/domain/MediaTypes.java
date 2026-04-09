@@ -118,8 +118,11 @@ public class MediaTypes {
   }
 
   public static boolean isBitmapImage(MediaType mediaType) {
-    return mediaType == JPG || mediaType == PNG || mediaType == GIF
-        || mediaType == WEBP || mediaType == AVIF;
+    return mediaType == JPG
+        || mediaType == PNG
+        || mediaType == GIF
+        || mediaType == WEBP
+        || mediaType == AVIF;
   }
 
   /**

@@ -6,6 +6,7 @@
 package org.grimmory.epub4j.archive;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -139,6 +140,16 @@ public final class DirectoryEpubContainer implements EpubContainer {
       throw new IOException("File not found: " + name);
     }
     return Files.readAllBytes(filePath);
+  }
+
+  @Override
+  public void streamTo(String name, OutputStream out) throws IOException {
+    checkOpen();
+    Path filePath = root.resolve(name);
+    if (!Files.exists(filePath)) {
+      throw new IOException("File not found: " + name);
+    }
+    Files.copy(filePath, out);
   }
 
   @Override

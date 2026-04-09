@@ -7,6 +7,7 @@ package org.grimmory.epub4j.archive;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Map;
 import org.grimmory.epub4j.domain.MediaType;
@@ -55,6 +56,18 @@ public sealed interface EpubContainer extends Closeable
    * @throws IOException if reading fails
    */
   byte[] readBytes(String name) throws IOException;
+
+  /**
+   * Stream a file's content directly to an output stream without materializing the full byte array
+   * in memory. Implementations may override for zero-copy I/O.
+   *
+   * @param name the file name (path within container)
+   * @param out the output stream to write to
+   * @throws IOException if reading or writing fails
+   */
+  default void streamTo(String name, OutputStream out) throws IOException {
+    out.write(readBytes(name));
+  }
 
   /**
    * Write bytes to a file in the container.

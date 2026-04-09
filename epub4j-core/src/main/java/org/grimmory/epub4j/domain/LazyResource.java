@@ -78,8 +78,8 @@ public final class LazyResource extends Resource {
   }
 
   /**
-   * Streams the resource contents directly from the provider to the output stream,
-   * without materializing the full byte[] on-heap.
+   * Streams the resource contents directly from the provider to the output stream, without
+   * materializing the full byte[] on-heap.
    */
   @Override
   public void writeTo(OutputStream out) throws IOException {

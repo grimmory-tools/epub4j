@@ -377,8 +377,8 @@ class PackageDocumentMetadataReader extends PackageDocumentBase {
 
   /**
    * Reads EPUB3 rendition and media duration properties from {@code <meta property="...">}
-   * elements. Handles rendition:layout, rendition:orientation, rendition:spread, and
-   * media:duration (total, not per-item).
+   * elements. Handles rendition:layout, rendition:orientation, rendition:spread, and media:duration
+   * (total, not per-item).
    */
   private static void readRenditionProperties(Element metadataElement, Metadata result) {
     NodeList metaTags = metadataElement.getElementsByTagName(OPFTags.meta);

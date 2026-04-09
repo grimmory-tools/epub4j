@@ -168,7 +168,8 @@ public class PackageDocumentReader extends PackageDocumentBase {
       }
 
       // Parse EPUB3 manifest item properties
-      String propertiesAttr = DOMUtil.getAttribute(itemElement, NAMESPACE_OPF, OPFAttributes.properties);
+      String propertiesAttr =
+          DOMUtil.getAttribute(itemElement, NAMESPACE_OPF, OPFAttributes.properties);
       if (propertiesAttr == null || propertiesAttr.isEmpty()) {
         propertiesAttr = itemElement.getAttribute(OPFAttributes.properties);
       }

@@ -551,8 +551,7 @@ public class EpubReader {
 
     // Prefer EPUB3 nav document over NCX for table of contents.
     // Fall through to NCX regardless to obtain the ncxResource handle.
-    boolean navParsed =
-        book.getNavResource() != null && NavDocumentReader.read(book);
+    boolean navParsed = book.getNavResource() != null && NavDocumentReader.read(book);
 
     Resource ncxResource = NCXDocument.read(book, this);
 

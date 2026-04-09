@@ -11,12 +11,12 @@
 package org.grimmory.epub4j.domain;
 
 import java.io.*;
+import java.util.EnumSet;
+import java.util.Set;
 import org.grimmory.epub4j.Constants;
 import org.grimmory.epub4j.util.IOUtil;
 import org.grimmory.epub4j.util.StringUtil;
 import org.grimmory.epub4j.util.commons.io.XmlStreamReader;
-import java.util.EnumSet;
-import java.util.Set;
 
 /**
  * Represents a resource that is part of the epub. A resource can be a html file, image, xml, etc.
@@ -175,8 +175,8 @@ public sealed class Resource implements Serializable permits LazyResource, OffHe
   }
 
   /**
-   * Writes the resource contents to the given OutputStream.
-   * Subclasses override to stream data without materializing the full byte[] on-heap.
+   * Writes the resource contents to the given OutputStream. Subclasses override to stream data
+   * without materializing the full byte[] on-heap.
    *
    * @param out the output stream to write to
    * @throws IOException if an I/O error occurs
@@ -338,7 +338,8 @@ public sealed class Resource implements Serializable permits LazyResource, OffHe
   }
 
   public void setProperties(Set<ManifestItemProperties> properties) {
-    this.properties = properties != null ? properties : EnumSet.noneOf(ManifestItemProperties.class);
+    this.properties =
+        properties != null ? properties : EnumSet.noneOf(ManifestItemProperties.class);
   }
 
   public boolean hasProperty(ManifestItemProperties property) {

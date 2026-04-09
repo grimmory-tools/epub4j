@@ -105,8 +105,8 @@ public final class OffHeapResource extends Resource implements AutoCloseable {
   }
 
   /**
-   * Streams the off-heap segment to the output stream in chunks without copying
-   * the entire segment to a byte[] first.
+   * Streams the off-heap segment to the output stream in chunks without copying the entire segment
+   * to a byte[] first.
    */
   @Override
   public void writeTo(OutputStream out) throws IOException {

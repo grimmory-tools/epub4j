@@ -22,8 +22,8 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 /**
- * Reads the EPUB3 XHTML Navigation Document as defined by
- * <a href="https://www.w3.org/TR/epub-33/#sec-nav">EPUB 3.3 §7 Navigation Document</a>.
+ * Reads the EPUB3 XHTML Navigation Document as defined by <a
+ * href="https://www.w3.org/TR/epub-33/#sec-nav">EPUB 3.3 §7 Navigation Document</a>.
  *
  * <p>Parses the {@code <nav epub:type="toc">} element to build a {@link TableOfContents}.
  */
@@ -145,7 +145,8 @@ public class NavDocumentReader {
       String fragmentId = StringUtil.substringAfter(fullRef, Constants.FRAGMENT_SEPARATOR_CHAR);
       Resource resource = book.getResources().getByHref(resourceHref);
       if (resource == null) {
-        log.log(System.Logger.Level.WARNING,
+        log.log(
+            System.Logger.Level.WARNING,
             "Resource with href '" + resourceHref + "' referenced in nav document not found");
       }
       TOCReference ref = new TOCReference(label, resource, fragmentId);

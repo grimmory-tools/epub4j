@@ -7,6 +7,7 @@ package org.grimmory.epub4j.archive;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,8 +25,8 @@ import org.w3c.dom.Document;
 /**
  * ZIP-based EPUB container implementation. Handles EPUB files stored as ZIP archives.
  *
- * <p>Uses random-access {@link ZipFile} for lazy entry reading instead of loading
- * all entries into memory eagerly. Only modified entries are held in a dirty cache.</p>
+ * <p>Uses random-access {@link ZipFile} for lazy entry reading instead of loading all entries into
+ * memory eagerly. Only modified entries are held in a dirty cache.
  *
  * @author Grimmory
  */
@@ -186,8 +187,8 @@ public final class ZipEpubContainer implements EpubContainer {
   }
 
   /**
-   * Read bytes from the dirty cache first, then from the ZipFile.
-   * Returns null if the entry does not exist.
+   * Read bytes from the dirty cache first, then from the ZipFile. Returns null if the entry does
+   * not exist.
    */
   private byte[] readBytesInternal(String name) throws IOException {
     byte[] cached = dirtyCache.get(name);
@@ -214,6 +215,26 @@ public final class ZipEpubContainer implements EpubContainer {
       throw new IOException("File not found: " + name);
     }
     return data.clone();
+  }
+
+  @Override
+  public void streamTo(String name, OutputStream out) throws IOException {
+    checkOpen();
+    byte[] cached = dirtyCache.get(name);
+    if (cached != null) {
+      out.write(cached);
+      return;
+    }
+    if (zipFile == null) {
+      throw new IOException("File not found: " + name);
+    }
+    ZipEntry entry = zipFile.getEntry(name);
+    if (entry == null) {
+      throw new IOException("File not found: " + name);
+    }
+    try (InputStream is = zipFile.getInputStream(entry)) {
+      is.transferTo(out);
+    }
   }
 
   @Override
