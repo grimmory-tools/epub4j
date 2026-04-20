@@ -25,7 +25,7 @@ axion-release-plugin = "1.21.1"
 jmh-plugin = "0.7.3"
 jmh = "1.37"
 spotless-plugin = "8.4.0"
-spotbugs-plugin = "6.5.0"
+spotbugs-plugin = "6.5.1"
 checkstyle = "13.3.0"
 pmd = "7.22.0"
 
