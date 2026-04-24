@@ -140,20 +140,9 @@ tasks.withType<Test>().configureEach {
     jvmArgs("-Djava.library.path=$libPath")
 }
 
-tasks.named("processResources") {
-    // Keep native binaries out of main jar; they are published as classifier artifacts.
-}
-
+// Keep native binaries out of the main jar; they are published as classifier artifacts.
 tasks.named<Jar>("jar") {
-    exclude(
-        "linux-aarch64/**",
-        "linux-musl-aarch64/**",
-        "linux-musl-x86_64/**",
-        "linux-x86_64/**",
-        "macos-aarch64/**",
-        "macos-x86_64/**",
-        "windows-x86_64/**"
-    )
+    exclude(requiredNativeClassifiers.map { "$it/**" })
 }
 
 // -- Per-platform classifier JARs --
