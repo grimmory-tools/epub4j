@@ -12,7 +12,6 @@ repositories {
 dependencies {
     implementation(libs.kxml2)
     implementation(libs.xmlpull)
-    api(libs.nightcompress)
 
     // Optional: when epubcheck is on classpath, EpubValidator uses it for deep validation
     compileOnly(libs.epubcheck)
@@ -38,12 +37,6 @@ jmh {
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
     jvmArgs("--enable-native-access=ALL-UNNAMED")
-    // NightCompress needs libarchive on the library path
-    val libPaths = listOf("/lib64", "/usr/lib", "/usr/local/lib", "/opt/homebrew/lib")
-        .filter { file(it).isDirectory }
-    if (libPaths.isNotEmpty()) {
-        systemProperty("java.library.path", libPaths.joinToString(separator = File.pathSeparator))
-    }
 }
 
 gversion {
