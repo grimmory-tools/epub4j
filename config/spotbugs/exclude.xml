@@ -10,37 +10,6 @@
         <Class name="~org\.grimmory\.epub4j\.native_parsing\..*" />
     </Match>
 
-    <!-- comic4j domain objects intentionally expose mutable structures for in-place editing workflows. -->
-    <Match>
-        <Class name="~org\.grimmory\.comic4j\.domain\.(ComicBook|ComicInfo)"/>
-        <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
-    </Match>
-
-    <!-- Enum extension sets are immutable and safe, SpotBugs still reports representation exposure. -->
-    <Match>
-        <Class name="~org\.grimmory\.comic4j\.(archive\.ArchiveFormat|domain\.ImageFormat)"/>
-        <Bug pattern="EI_EXPOSE_REP"/>
-    </Match>
-
-    <!-- HashMap pre-indexing in extraction is intentional for O(1) lookups. -->
-    <Match>
-        <Class name="org.grimmory.comic4j.image.ImageExtractor"/>
-        <Method name="extractAllImages"/>
-        <Bug pattern="UC_USELESS_OBJECT"/>
-    </Match>
-
-    <!-- ComicInfo entry extraction may legitimately return null for missing files. -->
-    <Match>
-        <Class name="org.grimmory.comic4j.archive.ComicArchiveReader"/>
-        <Method name="readComicInfoInternal"/>
-        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"/>
-    </Match>
-
-    <!-- JMH generated sources intentionally contain unread/unused fields. -->
-    <Match>
-        <Class name="~org\.grimmory\.comic4j\.benchmarks\.jmh_generated\..*"/>
-    </Match>
-
     <!-- JMH generated sources intentionally contain unread/unused fields. -->
     <Match>
         <Class name="~org\.grimmory\.epub4j\.benchmarks\.jmh_generated\..*"/>

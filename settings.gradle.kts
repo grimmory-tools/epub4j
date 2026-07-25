@@ -20,4 +20,3 @@ nmcpSettings {
 include("epub4j-core")
 include("epub4j-tools")
 include("epub4j-native")
-include("comic4j")

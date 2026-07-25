@@ -28,7 +28,6 @@ release:
 publish: build
 	rm -rf $$HOME/.m2/repository/org/grimmory/epub4j-core
 	rm -rf $$HOME/.m2/repository/org/grimmory/epub4j-native
-	rm -rf $$HOME/.m2/repository/org/grimmory/comic4j
 	$(SDK) ./gradlew publishToMavenLocal --warning-mode all
 
 publish-remote: publish
