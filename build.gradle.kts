@@ -69,8 +69,8 @@ subprojects {
     }
 
     dependencies {
-        "compileOnly"("com.github.spotbugs:spotbugs-annotations:4.9.8")
-        "testCompileOnly"("com.github.spotbugs:spotbugs-annotations:4.9.8")
+        "compileOnly"("com.github.spotbugs:spotbugs-annotations:4.10.3")
+        "testCompileOnly"("com.github.spotbugs:spotbugs-annotations:4.10.3")
         "testImplementation"(rootProject.libs.junit.jupiter)
         "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
         "testImplementation"(rootProject.libs.mockito.core)
