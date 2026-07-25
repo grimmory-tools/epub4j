@@ -10,8 +10,6 @@
  */
 package org.grimmory.epub4j.epub;
 
-import com.github.gotson.nightcompress.ArchiveEntry;
-import com.github.gotson.nightcompress.LibArchiveException;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,21 +27,18 @@ import java.util.Set;
 import java.util.concurrent.StructuredTaskScope;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
-import org.grimmory.epub4j.archive.ArchiveReader;
 import org.grimmory.epub4j.archive.FilenameValidator;
 import org.grimmory.epub4j.archive.ZipLocalHeaderRecovery;
 import org.grimmory.epub4j.domain.*;
 import org.grimmory.epub4j.util.CollectionUtil;
-import org.grimmory.epub4j.util.ResourceUtil;
 
 /**
- * Loads Resources from archive files using NightCompress/libarchive.
+ * Loads Resources from archive files
  *
  * @author paul
  */
 public class ResourcesLoader {
 
-  private static final System.Logger log = System.getLogger(ResourcesLoader.class.getName());
   private static final int COPY_BUFFER_SIZE = 8192;
 
   /** Result of loading resources, including any warnings for entries that were skipped. */
@@ -132,9 +127,9 @@ public class ResourcesLoader {
     List<EpubReader.IngestionWarning> warnings = new ArrayList<>();
     Set<String> seenPaths = new HashSet<>();
 
-    try (ArchiveReader reader = ArchiveReader.openZip(archivePath)) {
-      loadFromArchiveReader(
-          reader,
+    try {
+      loadFromJavaZip(
+          archivePath,
           result,
           warnings,
           seenPaths,
@@ -143,206 +138,21 @@ public class ResourcesLoader {
           defaultHtmlEncoding,
           lazyLoadedTypes,
           resourceProvider);
-    } catch (IOException e) {
-      throw e;
     } catch (Exception e) {
-      // Central directory may be corrupted  -  try local header recovery
-      if (strictMode && ArchiveReader.isAvailable()) {
-        // Only treat as fatal in strict mode when the native library IS available
-        // (i.e., the archive itself is truly unreadable, not just a missing library)
-        throw new IOException("Failed to read archive: " + archivePath, e);
+      if (strictMode) {
+        throw new IOException("Failed to read archive from stream", e);
       }
-      // Either non-strict mode or native library unavailable  -  fall back to pure Java
-      if (!ArchiveReader.isAvailable()) {
-        loadFromJavaZip(
-            archivePath,
-            result,
-            warnings,
-            seenPaths,
-            resolvedPolicy,
-            strictMode,
-            defaultHtmlEncoding,
-            lazyLoadedTypes,
-            resourceProvider);
-      } else {
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.ARCHIVE_CORRUPTED,
-                "Standard ZIP read failed, attempting local header recovery: " + e.getMessage(),
-                null));
-        loadFromRecovery(
-            archivePath, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding);
-      }
+
+      warnings.add(
+          new EpubReader.IngestionWarning(
+              EpubReader.IngestionCode.ARCHIVE_CORRUPTED,
+              "Standard ZIP read failed, attempting local header recovery: " + e.getMessage(),
+              null));
+      loadFromRecovery(
+          archivePath, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding);
     }
 
     return new ResourceLoadResult(result, warnings);
-  }
-
-  /** Standard archive reading path via NightCompress/libarchive. */
-  private static void loadFromArchiveReader(
-      ArchiveReader reader,
-      Resources result,
-      List<EpubReader.IngestionWarning> warnings,
-      Set<String> seenPaths,
-      EpubProcessingPolicy resolvedPolicy,
-      boolean strictMode,
-      String defaultHtmlEncoding,
-      List<MediaType> lazyLoadedTypes,
-      LazyResourceProvider resourceProvider)
-      throws IOException, LibArchiveException {
-    int entryCount = 0;
-    long totalUncompressedBytes = 0;
-
-    ArchiveEntry entry;
-    while ((entry = reader.nextEntry()) != null) {
-      entryCount++;
-      if (entryCount > resolvedPolicy.maxEntries()) {
-        String message =
-            "Archive entry count exceeds policy limit: "
-                + entryCount
-                + " > "
-                + resolvedPolicy.maxEntries();
-        if (strictMode) {
-          throw new IOException(message);
-        }
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.ARCHIVE_ENTRY_LIMIT, message, null));
-        break;
-      }
-
-      String name = entry.getName();
-      if (name == null || name.endsWith("/")) {
-        continue;
-      }
-
-      if (FilenameValidator.isSystemFile(name)) {
-        continue;
-      }
-
-      if (!FilenameValidator.isSafeEntryName(name)) {
-        if (strictMode) {
-          throw new IOException("Unsafe archive entry path: " + name);
-        }
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.RESOURCE_UNSAFE_PATH,
-                "Skipping unsafe archive entry: " + name,
-                name));
-        continue;
-      }
-
-      String normalizedPath = normalizeEntryPathKey(name);
-      if (!seenPaths.add(normalizedPath)) {
-        if (strictMode) {
-          throw new IOException("Duplicate archive entry path: " + name);
-        }
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.RESOURCE_DUPLICATE,
-                "Skipping duplicate archive entry: " + name,
-                name));
-        continue;
-      }
-
-      long declaredSize = entry.getSize() != null ? entry.getSize() : -1;
-      if (declaredSize > resolvedPolicy.maxEntryBytes()) {
-        String message =
-            "Archive entry exceeds policy size limit: "
-                + name
-                + " ("
-                + declaredSize
-                + " > "
-                + resolvedPolicy.maxEntryBytes()
-                + " bytes)";
-        if (strictMode) {
-          throw new IOException(message);
-        }
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.RESOURCE_SIZE_EXCEEDED, message, name));
-        continue;
-      }
-      if (declaredSize > 0) {
-        totalUncompressedBytes += declaredSize;
-        if (totalUncompressedBytes > resolvedPolicy.maxTotalUncompressedBytes()) {
-          String message =
-              "Archive total uncompressed size exceeds policy limit: "
-                  + totalUncompressedBytes
-                  + " > "
-                  + resolvedPolicy.maxTotalUncompressedBytes()
-                  + " bytes";
-          if (strictMode) {
-            throw new IOException(message);
-          }
-          warnings.add(
-              new EpubReader.IngestionWarning(
-                  EpubReader.IngestionCode.ARCHIVE_SIZE_LIMIT, message, null));
-          break;
-        }
-      }
-
-      try {
-        Resource resource;
-        if (shouldLoadLazy(name, lazyLoadedTypes)) {
-          long size = entry.getSize() != null ? entry.getSize() : 0;
-          resource = new LazyResource(resourceProvider, size, name);
-        } else {
-          try (InputStream entryStream = reader.getEntryInputStream()) {
-            resource = ResourceUtil.createResource(name, entryStream);
-            if (resource.getData() != null) {
-              long actualSize = resource.getData().length;
-              if (actualSize > resolvedPolicy.maxEntryBytes()) {
-                String message =
-                    "Archive entry exceeds policy size limit after read: "
-                        + name
-                        + " ("
-                        + actualSize
-                        + " > "
-                        + resolvedPolicy.maxEntryBytes()
-                        + " bytes)";
-                if (strictMode) {
-                  throw new IOException(message);
-                }
-                warnings.add(
-                    new EpubReader.IngestionWarning(
-                        EpubReader.IngestionCode.RESOURCE_SIZE_EXCEEDED, message, name));
-                continue;
-              }
-              // Promote large resources to off-heap when policy enables it
-              if (resolvedPolicy.useOffHeapResources()
-                  && actualSize >= resolvedPolicy.offHeapThresholdBytes()) {
-                byte[] data = resource.getData();
-                resource = new OffHeapResource(data, name);
-              }
-            }
-          }
-        }
-
-        if (resource.getMediaType() == MediaTypes.XHTML) {
-          resource.setInputEncoding(defaultHtmlEncoding);
-        }
-        result.add(resource);
-      } catch (IOException e) {
-        if (strictMode) {
-          throw e;
-        }
-        String message = "Failed to load resource " + name + ": " + e.getMessage();
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.RESOURCE_LOAD_ERROR, message, name));
-        log.log(System.Logger.Level.WARNING, message);
-      } catch (Exception e) {
-        if (strictMode) {
-          throw new IOException("Failed to load resource: " + name, e);
-        }
-        String message = "Failed to load resource " + name + ": " + e.getMessage();
-        warnings.add(
-            new EpubReader.IngestionWarning(
-                EpubReader.IngestionCode.RESOURCE_LOAD_ERROR, message, name));
-        log.log(System.Logger.Level.WARNING, message);
-      }
-    }
   }
 
   /**
@@ -416,8 +226,7 @@ public class ResourcesLoader {
   /**
    * Loads all entries from the input stream as resources.
    *
-   * <p>The stream is written to a temporary file first, since NightCompress requires a file path
-   * for random-access reading.
+   * <p>The stream is written to a temporary file first for random-access reading.
    *
    * @param inputStream the input stream containing the archive data
    * @param defaultHtmlEncoding encoding to use for XHTML files
@@ -450,7 +259,6 @@ public class ResourcesLoader {
     Resources result = new Resources();
     List<EpubReader.IngestionWarning> warnings = new ArrayList<>();
 
-    // NightCompress's libarchive binding can only read from file descriptors, not streams
     Path tempFile = Files.createTempFile("epub4j-resources-", ".tmp");
     try {
       copyToTempWithLimit(inputStream, tempFile, resolvedPolicy.maxArchiveBytes());
@@ -459,9 +267,9 @@ public class ResourcesLoader {
       validateArchiveBudget(tempFile, resolvedPolicy);
 
       Set<String> seenPaths = new HashSet<>();
-      try (ArchiveReader reader = ArchiveReader.openZip(tempFile)) {
-        loadFromArchiveReader(
-            reader,
+      try {
+        loadFromJavaZip(
+            tempFile,
             result,
             warnings,
             seenPaths,
@@ -470,32 +278,19 @@ public class ResourcesLoader {
             defaultHtmlEncoding,
             Collections.emptyList(),
             null);
-      } catch (IOException e) {
-        throw e;
       } catch (Exception e) {
-        if (strictMode && ArchiveReader.isAvailable()) {
+        if (strictMode) {
           throw new IOException("Failed to read archive from stream", e);
         }
-        if (!ArchiveReader.isAvailable()) {
-          loadFromJavaZip(
-              tempFile,
-              result,
-              warnings,
-              seenPaths,
-              resolvedPolicy,
-              strictMode,
-              defaultHtmlEncoding,
-              Collections.emptyList(),
-              null);
-        } else {
-          warnings.add(
-              new EpubReader.IngestionWarning(
-                  EpubReader.IngestionCode.ARCHIVE_CORRUPTED,
-                  "Standard ZIP read failed, attempting local header recovery: " + e.getMessage(),
-                  null));
-          loadFromRecovery(
-              tempFile, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding);
-        }
+
+        warnings.add(
+            new EpubReader.IngestionWarning(
+                EpubReader.IngestionCode.ARCHIVE_CORRUPTED,
+                "Standard ZIP read failed, attempting local header recovery: " + e.getMessage(),
+                null));
+
+        loadFromRecovery(
+            tempFile, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding);
       }
     } finally {
       Files.deleteIfExists(tempFile);
@@ -574,8 +369,7 @@ public class ResourcesLoader {
   }
 
   /**
-   * Pure Java ZIP fallback when NightCompress/libarchive is not available. Uses
-   * java.util.zip.ZipFile for random-access reading, enabling parallel extraction via virtual
+   * Uses java.util.zip.ZipFile for random-access reading, enabling parallel extraction via virtual
    * threads when parallelLoading is enabled.
    */
   private static void loadFromJavaZip(

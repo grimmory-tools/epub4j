@@ -114,7 +114,7 @@ public class EpubReader {
 
   /**
    * Reads an EPUB from a file path. This is the preferred method as it avoids creating a temporary
-   * file - NightCompress/libarchive reads directly from the path.
+   * file.
    *
    * @param epubPath path to the EPUB file
    * @return the parsed Book
