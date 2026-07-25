@@ -19,8 +19,8 @@ import org.grimmory.epub4j.domain.TOCReference;
 import org.junit.jupiter.api.Test;
 
 /**
- * End-to-end EPUB read/write round-trip tests verifying that archive and IOUtil
- * produce valid EPUBs.
+ * End-to-end EPUB read/write round-trip tests verifying that archive and IOUtil produce valid
+ * EPUBs.
  */
 public class EpubRoundTripTest {
 

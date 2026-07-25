@@ -110,8 +110,8 @@ public class ResourcesLoader {
       Path archivePath,
       String defaultHtmlEncoding,
       List<MediaType> lazyLoadedTypes,
-      EpubProcessingPolicy policy
-  ) throws IOException {
+      EpubProcessingPolicy policy)
+      throws IOException {
 
     EpubProcessingPolicy resolvedPolicy =
         policy != null ? policy : EpubProcessingPolicy.defaultPolicy();
@@ -129,16 +129,15 @@ public class ResourcesLoader {
 
     try {
       loadFromJavaZip(
-              archivePath,
-              result,
-              warnings,
-              seenPaths,
-              resolvedPolicy,
-              strictMode,
-              defaultHtmlEncoding,
-              lazyLoadedTypes,
-              resourceProvider
-      );
+          archivePath,
+          result,
+          warnings,
+          seenPaths,
+          resolvedPolicy,
+          strictMode,
+          defaultHtmlEncoding,
+          lazyLoadedTypes,
+          resourceProvider);
     } catch (Exception e) {
       if (strictMode) {
         throw new IOException("Failed to read archive from stream", e);
@@ -250,10 +249,8 @@ public class ResourcesLoader {
    * were skipped or had errors.
    */
   public static ResourceLoadResult loadResourcesWithWarnings(
-      InputStream inputStream,
-      String defaultHtmlEncoding,
-      EpubProcessingPolicy policy
-  ) throws IOException {
+      InputStream inputStream, String defaultHtmlEncoding, EpubProcessingPolicy policy)
+      throws IOException {
 
     EpubProcessingPolicy resolvedPolicy =
         policy != null ? policy : EpubProcessingPolicy.defaultPolicy();
@@ -280,8 +277,7 @@ public class ResourcesLoader {
             strictMode,
             defaultHtmlEncoding,
             Collections.emptyList(),
-            null
-        );
+            null);
       } catch (Exception e) {
         if (strictMode) {
           throw new IOException("Failed to read archive from stream", e);
@@ -291,13 +287,10 @@ public class ResourcesLoader {
             new EpubReader.IngestionWarning(
                 EpubReader.IngestionCode.ARCHIVE_CORRUPTED,
                 "Standard ZIP read failed, attempting local header recovery: " + e.getMessage(),
-                null
-            )
-        );
+                null));
 
         loadFromRecovery(
-            tempFile, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding
-        );
+            tempFile, result, warnings, seenPaths, resolvedPolicy, defaultHtmlEncoding);
       }
     } finally {
       Files.deleteIfExists(tempFile);
