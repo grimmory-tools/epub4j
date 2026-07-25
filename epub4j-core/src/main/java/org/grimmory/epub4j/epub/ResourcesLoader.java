@@ -39,7 +39,6 @@ import org.grimmory.epub4j.util.CollectionUtil;
  */
 public class ResourcesLoader {
 
-  private static final System.Logger log = System.getLogger(ResourcesLoader.class.getName());
   private static final int COPY_BUFFER_SIZE = 8192;
 
   /** Result of loading resources, including any warnings for entries that were skipped. */
