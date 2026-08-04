@@ -408,6 +408,48 @@ endif()
 
 target_compile_options(epub4j_native PRIVATE ${EPUB4J_NATIVE_COMPILE_FLAGS})
 
+# ============================================================================
+# Symbol visibility
+#
+# All third-party dependencies above are statically linked into this single
+# shared library.  By default every one of their symbols (pugixml, gumbo,
+# uchardet, zlib, libarchive, libjpeg-turbo, libpng, libwebp -- several
+# thousand of them) becomes a global dynamic symbol of libepub4j_native, so
+# any other component in the same process can accidentally bind to our
+# private, feature-reduced copy instead of its own library.  This has bitten
+# real consumers: a JVM using SymbolLookup.loaderLookup() searches *every*
+# loaded native library, so archive_* calls meant for the system libarchive
+# resolved into ours.
+#
+# Two complementary mechanisms keep the exported surface to the public C API:
+#   * hidden default visibility for our own translation units (the public
+#     entry points are tagged EPUB_NATIVE_API == visibility("default"));
+#   * a linker export filter, which is what actually covers the symbols that
+#     come out of the statically linked dependencies.
+# ============================================================================
+set_target_properties(epub4j_native PROPERTIES
+    C_VISIBILITY_PRESET hidden
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+)
+
+if(EPUB4J_NATIVE_BUILD_SHARED AND NOT MSVC)
+    if(APPLE)
+        target_link_options(epub4j_native PRIVATE
+            "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/epub4j_native.symbols"
+        )
+        set_property(TARGET epub4j_native APPEND PROPERTY
+            LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/epub4j_native.symbols")
+    elseif(NOT WIN32)
+        target_link_options(epub4j_native PRIVATE
+            "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/epub4j_native.map"
+            "-Wl,--exclude-libs,ALL"
+        )
+        set_property(TARGET epub4j_native APPEND PROPERTY
+            LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/epub4j_native.map")
+    endif()
+endif()
+
 target_include_directories(epub4j_native
     PUBLIC
         $<BUILD_INTERFACE:${EPUB4J_NATIVE_INCLUDES}>

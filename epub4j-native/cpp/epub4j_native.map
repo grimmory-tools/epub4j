@@ -1,0 +1,17 @@
+# Linker version script for libepub4j_native.so (GNU ld / gold / lld).
+#
+# The library statically links pugixml, gumbo, uchardet, zlib, libarchive,
+# libjpeg-turbo, libpng and libwebp.  Without this script every symbol of
+# those vendored copies (e.g. all 270 archive_* entry points) is exported as
+# a global dynamic symbol and can be picked up by unrelated code in the same
+# process -- notably by JVM lookups such as SymbolLookup.loaderLookup(),
+# which searches every loaded native library rather than a specific one.
+#
+# The anonymous version tag filters the dynamic symbol table without
+# attaching a symbol version, so the ABI seen by dlsym()/FFM stays unchanged.
+{
+  global:
+    epub_native_*;
+  local:
+    *;
+};
