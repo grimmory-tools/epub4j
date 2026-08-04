@@ -1,0 +1,3 @@
+# Exported symbol list for libepub4j_native.dylib (Apple ld).
+# Mach-O prefixes C symbols with an underscore.
+_epub_native_*
