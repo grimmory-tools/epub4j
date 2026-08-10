@@ -43,19 +43,6 @@
         <Bug pattern="DM_DEFAULT_ENCODING,DMI_RANDOM_USED_ONLY_ONCE,OBL_UNSATISFIED_OBLIGATION,RV_RETURN_VALUE_IGNORED_BAD_PRACTICE,DMI_HARDCODED_ABSOLUTE_FILENAME,HE_EQUALS_USE_HASHCODE,EQ_UNUSUAL,DLS_DEAD_LOCAL_STORE,REC_CATCH_EXCEPTION"/>
     </Match>
 
-    <!-- Known intentional catches used for best-effort parsing/optional native fallback. -->
-    <Match>
-        <Class name="org.grimmory.epub4j.epub.BookRepair"/>
-        <Method name="isWellFormedXml"/>
-        <Bug pattern="REC_CATCH_EXCEPTION"/>
-    </Match>
-
-    <Match>
-        <Class name="org.grimmory.epub4j.epub.BookRepair"/>
-        <Method name="tryNativeHtmlCleaner"/>
-        <Bug pattern="REC_CATCH_EXCEPTION"/>
-    </Match>
-
     <!-- Known false positives around nullable/path checks in parser utility code. -->
     <Match>
         <Class name="org.grimmory.epub4j.epub.PackageDocumentReader"/>

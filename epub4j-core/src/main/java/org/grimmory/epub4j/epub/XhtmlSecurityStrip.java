@@ -7,10 +7,7 @@ package org.grimmory.epub4j.epub;
 
 import java.util.regex.Pattern;
 
-/**
- * Strips dangerous HTML/XHTML elements that can execute code or embed external content. Used by
- * both {@link BookRepair} (full repair pipeline) and {@link EpubReader} (read-time sanitization).
- */
+/** Strips dangerous HTML/XHTML elements that can execute code or embed external content. */
 final class XhtmlSecurityStrip {
 
   private XhtmlSecurityStrip() {}

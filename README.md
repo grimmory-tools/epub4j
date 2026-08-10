@@ -76,32 +76,6 @@ if (result.report().hasCorrections()) {
 }
 ```
 
-## Repair
-
-`BookRepair` now includes a stricter cleanup pass for XHTML content:
-
-- Guarded lowercasing of legacy HTML tag and attribute names in XHTML resources
-- Preservation of namespaced attributes (for example `xlink:href`)
-- Removal of Adobe DRM meta markers and inline script artifacts
-- Pruning of broken TOC references against actual XHTML resources
-- Optional JavaScript resource pruning when files are no longer referenced
-- Removal of common non-content artifact files
-- Mimetype validation with strict failure or recover-mode warnings
-- Language tag normalization and stray `<img>` cleanup
-- Ebooklib-style spine normalization: drop invalid/duplicate/non-XHTML spine refs and append missing XHTML content docs
-- Manifest/spine alias reconciliation for href/idref drift in mixed-encoding paths
-- XHTML pre-parse hardening inspired by html5lib/lxml/xmllint defensive parsing workflows
-- Link graph repair pass for broken internal href/src/url targets with conservative rewrites
-
-```java
-BookRepair repair = new BookRepair();
-BookRepair.RepairResult repaired = repair.repair(book);
-
-repaired.actions().forEach(a ->
-    System.out.println(a.code() + " -> " + a.description())
-);
-```
-
 ## KOReader-compatible checksum
 
 Ported from KOReader checksum behavior for lightweight file identity workflows:
