@@ -16,9 +16,6 @@ dependencies {
     // Optional: when epubcheck is on classpath, EpubValidator uses it for deep validation
     compileOnly(libs.epubcheck)
 
-    // Detected at runtime via reflection so consumers get native acceleration transparently
-    runtimeOnly(project(":epub4j-native"))
-
     testImplementation(libs.epubcheck)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
