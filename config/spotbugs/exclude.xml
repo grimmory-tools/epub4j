@@ -73,11 +73,6 @@
     </Match>
 
     <Match>
-        <Class name="org.grimmory.epub4j.archive.DirectoryEpubContainer$1"/>
-        <Bug pattern="DE_MIGHT_IGNORE"/>
-    </Match>
-
-    <Match>
         <Class name="org.grimmory.epub4j.archive.ZipLocalHeaderRecovery$RecoveredEntry"/>
         <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
     </Match>
