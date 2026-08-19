@@ -25,7 +25,7 @@ import org.openjdk.jmh.infra.Blackhole;
 @Measurement(iterations = 3, time = 1)
 @Fork(
     value = 1,
-    jvmArgs = {"--enable-preview", "--enable-native-access=ALL-UNNAMED"})
+    jvmArgs = {"--enable-preview"})
 public class EpubReaderBenchmark {
 
   private byte[] epubBytes;

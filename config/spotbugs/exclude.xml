@@ -1,15 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <FindBugsFilter>
-    <!-- jextract/Panama binding classes are generated and constrained by C ABI names. -->
-    <Match>
-        <Class name="~org\.grimmory\.epub4j\.native_parsing\.(EpubNative.*|.*Headers)" />
-    </Match>
-
-    <!-- Native FFM wrappers are constrained by external ABI/lifecycle patterns. -->
-    <Match>
-        <Class name="~org\.grimmory\.epub4j\.native_parsing\..*" />
-    </Match>
-
     <!-- JMH generated sources intentionally contain unread/unused fields. -->
     <Match>
         <Class name="~org\.grimmory\.epub4j\.benchmarks\.jmh_generated\..*"/>

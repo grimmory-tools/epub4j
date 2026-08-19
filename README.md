@@ -105,10 +105,10 @@ var byBytes = KoReaderChecksum.calculate(epubBytes);
 ## Runtime And Toolchain Requirements
 
 - Java 25
-- JVM flags for preview and native interop paths:
+- JVM flags for preview:
 
 ```text
---enable-preview --enable-native-access=ALL-UNNAMED
+--enable-preview
 ```
 
 ## Quality Workflow

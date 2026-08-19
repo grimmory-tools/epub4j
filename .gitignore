@@ -51,14 +51,3 @@ build_*/
 
 # Test output EPUBs
 *.epub
-
-# Staged native binaries (CI builds these per-platform; never commit them)
-epub4j-native/java/src/main/resources/linux-*/
-epub4j-native/java/src/main/resources/macos-*/
-epub4j-native/java/src/main/resources/windows-*/
-
-# CMake build artifacts (native C++ build)
-epub4j-native/cpp/build
-epub4j-native/cpp/build/
-epub4j-native/cpp/build*/
-epub4j-native/cpp/build*

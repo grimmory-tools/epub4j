@@ -121,21 +121,9 @@ subprojects {
         }
     }
 
-    tasks.withType<Checkstyle>().configureEach {
-        exclude(
-            "**/native_parsing/**/*.java",
-            "**/native_parsing/EpubNative*.java",
-            "**/native_parsing/*Headers.java"
-        )
-    }
+    tasks.withType<Checkstyle>().configureEach {}
 
-    tasks.withType<Pmd>().configureEach {
-        exclude(
-            "**/native_parsing/**/*.java",
-            "**/native_parsing/EpubNative*.java",
-            "**/native_parsing/*Headers.java"
-        )
-    }
+    tasks.withType<Pmd>().configureEach {}
 
     tasks.named("check") {
         dependsOn("spotlessCheck")
