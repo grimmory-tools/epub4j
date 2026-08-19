@@ -30,13 +30,10 @@ public class EncodingNormalizer {
 
   private static final System.Logger log = System.getLogger(EncodingNormalizer.class.getName());
 
-  // Pluggable heuristic detector (e.g. ICU via epub4j-native)
+  // Pluggable heuristic detector
   private static volatile EncodingDetector heuristicDetector;
 
-  /**
-   * Register a heuristic encoding detector used when BOM and declarations are absent. Typically
-   * called once at startup by the native module.
-   */
+  /** Register a heuristic encoding detector used when BOM and declarations are absent. */
   public static void setEncodingDetector(EncodingDetector detector) {
     heuristicDetector = detector;
   }

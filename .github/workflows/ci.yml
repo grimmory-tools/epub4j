@@ -22,16 +22,9 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@3f131e8634966bd73d06cc69884922b02e6faf92 # v6.2.0
 
-      - name: Cache native build artifacts
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: epub4j-native/cpp/build
-          key: native-${{ runner.os }}-${{ hashFiles('epub4j-native/cpp/CMakeLists.txt', 'epub4j-native/cpp/src/**', 'epub4j-native/cpp/include/**') }}
-          restore-keys: native-${{ runner.os }}-
-
       - run: ./gradlew clean check --warning-mode all
         env:
-          JAVA_TOOL_OPTIONS: "--enable-native-access=ALL-UNNAMED --enable-preview"
+          JAVA_TOOL_OPTIONS: "--enable-preview"
 
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

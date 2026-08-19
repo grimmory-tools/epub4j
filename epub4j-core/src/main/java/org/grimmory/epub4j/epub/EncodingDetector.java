@@ -10,10 +10,7 @@ import java.util.Optional;
 /**
  * Pluggable encoding detection strategy for byte data.
  *
- * <p>Implementations may use ICU, chardet, or other heuristic engines. The native module provides
- * an ICU-backed implementation via {@code NativeEncodingDetector}; register it with {@link
- * EncodingNormalizer#setEncodingDetector(EncodingDetector)} to enable heuristic fallback when BOM
- * and declarations are absent.
+ * <p>Implementations may use ICU, chardet, or other heuristic engines.
  */
 @FunctionalInterface
 public interface EncodingDetector {

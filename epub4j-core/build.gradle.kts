@@ -28,12 +28,11 @@ jmh {
     warmupIterations = 2
     iterations = 3
     fork = 1
-    jvmArgs = listOf("--enable-preview", "--enable-native-access=ALL-UNNAMED")
+    jvmArgs = listOf("--enable-preview")
 }
 
 tasks.withType<Test>().configureEach {
     useJUnitPlatform()
-    jvmArgs("--enable-native-access=ALL-UNNAMED")
 }
 
 gversion {
