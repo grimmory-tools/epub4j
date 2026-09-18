@@ -343,17 +343,11 @@ public class EpubReader {
 
     // Resources may contain non-UTF-8 text or unsafe XHTML  -  normalize before OPF parsing
     // depends on consistent encoding. Parallelise when possible to reduce wall-clock time.
-    boolean doSanitize = resolvedPolicy.sanitizeXhtml();
-    if (normalizeEncoding || doSanitize) {
+    if (normalizeEncoding) {
       if (resolvedPolicy.parallelLoading() && resourceCount > 1) {
-        processResourcesParallel(resources, normalizeEncoding, doSanitize);
+        processResourcesParallel(resources, true);
       } else {
-        if (normalizeEncoding) {
-          normalizeResourcesEncoding(resources);
-        }
-        if (doSanitize) {
-          sanitizeXhtmlResources(resources);
-        }
+        normalizeResourcesEncoding(resources);
       }
     }
 
@@ -442,35 +436,11 @@ public class EpubReader {
   }
 
   /**
-   * Strip dangerous XHTML elements (scripts, iframes, object, embed, etc.) from all XHTML resources
-   * at read time.
-   */
-  private static void sanitizeXhtmlResources(Resources resources) {
-    for (Resource resource : resources.getAll()) {
-      if (resource.getMediaType() != MediaTypes.XHTML) {
-        continue;
-      }
-      try {
-        byte[] data = resource.getData();
-        if (data == null || data.length == 0) continue;
-        String content = new String(data, StandardCharsets.UTF_8);
-        String sanitized = XhtmlSecurityStrip.strip(content);
-        if (!sanitized.equals(content)) {
-          resource.setData(sanitized.getBytes(StandardCharsets.UTF_8));
-        }
-      } catch (IOException e) {
-        log.log(System.Logger.Level.DEBUG, "Failed to sanitize XHTML: " + resource.getHref());
-      }
-    }
-  }
-
-  /**
    * Process resources in parallel using structured concurrency. Each resource gets encoding
    * normalization and/or XHTML sanitization on its own virtual thread. Uses awaitAll() joiner so
    * individual failures are logged but don't cancel other tasks.
    */
-  private static void processResourcesParallel(
-      Resources resources, boolean normalizeEncoding, boolean sanitizeXhtml) {
+  private static void processResourcesParallel(Resources resources, boolean normalizeEncoding) {
     List<Resource> allResources = new ArrayList<>(resources.getAll());
     if (allResources.isEmpty()) {
       return;
@@ -481,7 +451,7 @@ public class EpubReader {
       for (Resource resource : allResources) {
         scope.fork(
             () -> {
-              processResource(resource, normalizeEncoding, sanitizeXhtml);
+              processResource(resource, normalizeEncoding);
               return null;
             });
       }
@@ -491,8 +461,7 @@ public class EpubReader {
     }
   }
 
-  private static void processResource(
-      Resource resource, boolean normalizeEncoding, boolean sanitizeXhtml) {
+  private static void processResource(Resource resource, boolean normalizeEncoding) {
     if (normalizeEncoding) {
       try {
         EncodingNormalizer.normalizeToUtf8(resource);
@@ -500,20 +469,6 @@ public class EpubReader {
         log.log(
             System.Logger.Level.WARNING,
             "Failed to normalize encoding for " + resource.getHref() + ": " + e.getMessage());
-      }
-    }
-    if (sanitizeXhtml && resource.getMediaType() == MediaTypes.XHTML) {
-      try {
-        byte[] data = resource.getData();
-        if (data != null && data.length > 0) {
-          String content = new String(data, StandardCharsets.UTF_8);
-          String sanitized = XhtmlSecurityStrip.strip(content);
-          if (!sanitized.equals(content)) {
-            resource.setData(sanitized.getBytes(StandardCharsets.UTF_8));
-          }
-        }
-      } catch (IOException e) {
-        log.log(System.Logger.Level.DEBUG, "Failed to sanitize XHTML: " + resource.getHref());
       }
     }
   }

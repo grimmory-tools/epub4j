@@ -17,7 +17,6 @@ import java.util.zip.ZipOutputStream;
 import org.grimmory.epub4j.domain.Book;
 import org.grimmory.epub4j.domain.MediaTypes;
 import org.grimmory.epub4j.domain.Resource;
-import org.grimmory.epub4j.domain.Resources;
 import org.junit.jupiter.api.Test;
 
 public class EpubReaderTest {
@@ -242,61 +241,6 @@ public class EpubReaderTest {
       zos.closeEntry();
     }
     return temp;
-  }
-
-  @Test
-  public void testReadSanitizesDangerousXhtmlByDefault() throws IOException {
-    String dangerousXhtml =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>T</title></head>"
-            + "<body>"
-            + "<script>alert('xss')</script>"
-            + "<iframe src=\"https://evil.example.com\"></iframe>"
-            + "<object data=\"x.swf\"><param name=\"a\" value=\"b\"/></object>"
-            + "<p>Safe content</p>"
-            + "</body></html>";
-    Resources resources = new Resources();
-    Resource res =
-        new Resource(
-            "ch1",
-            dangerousXhtml.getBytes(StandardCharsets.UTF_8),
-            "chapter1.xhtml",
-            MediaTypes.XHTML);
-    resources.add(res);
-
-    new EpubReader().readEpub(resources);
-    String content = new String(res.getData(), StandardCharsets.UTF_8);
-
-    assertTrue(content.contains("<p>Safe content</p>"), "Safe content should be preserved");
-    assertTrue(!content.contains("<script"), "Scripts should be stripped");
-    assertTrue(!content.contains("<iframe"), "Iframes should be stripped");
-    assertTrue(!content.contains("<object"), "Objects should be stripped");
-  }
-
-  @Test
-  public void testReadPreservesDangerousXhtmlWhenSanitizationDisabled() throws IOException {
-    String dangerousXhtml =
-        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-            + "<html xmlns=\"http://www.w3.org/1999/xhtml\"><head><title>T</title></head>"
-            + "<body><script>alert('xss')</script><p>Safe</p></body></html>";
-    Resources resources = new Resources();
-    Resource res =
-        new Resource(
-            "ch1",
-            dangerousXhtml.getBytes(StandardCharsets.UTF_8),
-            "chapter1.xhtml",
-            MediaTypes.XHTML);
-    resources.add(res);
-
-    EpubProcessingPolicy noSanitize =
-        EpubProcessingPolicy.builder(EpubProcessingPolicy.defaultPolicy())
-            .sanitizeXhtml(false)
-            .build();
-    new EpubReader(null, noSanitize).readEpub(resources);
-    String content = new String(res.getData(), StandardCharsets.UTF_8);
-
-    assertTrue(
-        content.contains("<script>"), "Scripts should be preserved when sanitization disabled");
   }
 
   private static Path createEpubWithoutToc() throws IOException {
