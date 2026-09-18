@@ -13,21 +13,23 @@ final class XhtmlSecurityStrip {
   private XhtmlSecurityStrip() {}
 
   private static final Pattern SCRIPT_BLOCK =
-      Pattern.compile("(?is)<script\\b[^>]*>.*?</script\\s*>");
-  private static final Pattern SCRIPT_SELF_CLOSING = Pattern.compile("(?is)<script\\b[^>]*/\\s*>");
+      Pattern.compile("<script\\b[^>]*>.*?</script\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+  private static final Pattern SCRIPT_SELF_CLOSING = Pattern.compile("<script\\b[^>]*/\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private static final Pattern INLINE_EVENT_HANDLER_ATTR =
-      Pattern.compile("(?i)\\s+on[a-z0-9_-]+\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)");
+      Pattern.compile("\\son[a-z0-9_-]+\\s*=\\s*(\"[^\"]*\"|'[^']*'|[^\\s>]+)", Pattern.CASE_INSENSITIVE);
   private static final Pattern JAVASCRIPT_URI_ATTR =
       Pattern.compile(
-          "(?i)\\s+(href|src)\\s*=\\s*(\"\\s*javascript:[^\"]*\"|'\\s*javascript:[^']*'|javascript:[^\\s>]+)");
+          "\\s(href|src)\\s*=\\s*(\"\\s*javascript:[^\"]*\"|'\\s*javascript:[^']*'|javascript:[^\\s>]+)",
+              Pattern.CASE_INSENSITIVE
+      );
   private static final Pattern OBJECT_BLOCK =
-      Pattern.compile("(?is)<object\\b[^>]*>.*?</object\\s*>");
-  private static final Pattern EMBED_TAG = Pattern.compile("(?is)<embed\\b[^>]*/?\\s*>");
+      Pattern.compile("<object\\b[^>]*>.*?</object\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+  private static final Pattern EMBED_TAG = Pattern.compile("<embed\\b[^>]*/?\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private static final Pattern APPLET_BLOCK =
-      Pattern.compile("(?is)<applet\\b[^>]*>.*?</applet\\s*>");
+      Pattern.compile("<applet\\b[^>]*>.*?</applet\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
   private static final Pattern IFRAME_BLOCK =
-      Pattern.compile("(?is)<iframe\\b[^>]*>.*?</iframe\\s*>");
-  private static final Pattern FORM_BLOCK = Pattern.compile("(?is)<form\\b[^>]*>.*?</form\\s*>");
+      Pattern.compile("<iframe\\b[^>]*>.*?</iframe\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
+  private static final Pattern FORM_BLOCK = Pattern.compile("<form\\b[^>]*>.*?</form\\s*>", Pattern.CASE_INSENSITIVE | Pattern.DOTALL);
 
   /**
    * Strip all dangerous elements from XHTML content.
