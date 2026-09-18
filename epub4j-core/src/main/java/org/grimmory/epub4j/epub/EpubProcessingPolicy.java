@@ -28,7 +28,6 @@ public record EpubProcessingPolicy(
     int maxEntries,
     long maxEntryBytes,
     long maxTotalUncompressedBytes,
-    boolean sanitizeXhtml,
     boolean parallelLoading,
     int maxConcurrency,
     long parseTimeoutMs,
@@ -83,7 +82,6 @@ public record EpubProcessingPolicy(
         DEFAULT_MAX_ENTRY_BYTES,
         DEFAULT_MAX_TOTAL_UNCOMPRESSED_BYTES,
         true,
-        true,
         DEFAULT_MAX_CONCURRENCY,
         DEFAULT_PARSE_TIMEOUT_MS,
         true,
@@ -97,7 +95,6 @@ public record EpubProcessingPolicy(
         DEFAULT_MAX_ENTRIES,
         DEFAULT_MAX_ENTRY_BYTES,
         DEFAULT_MAX_TOTAL_UNCOMPRESSED_BYTES,
-        true,
         true,
         DEFAULT_MAX_CONCURRENCY,
         DEFAULT_PARSE_TIMEOUT_MS,
@@ -119,7 +116,6 @@ public record EpubProcessingPolicy(
     private int maxEntries = DEFAULT_MAX_ENTRIES;
     private long maxEntryBytes = DEFAULT_MAX_ENTRY_BYTES;
     private long maxTotalUncompressedBytes = DEFAULT_MAX_TOTAL_UNCOMPRESSED_BYTES;
-    private boolean sanitizeXhtml = true;
     private boolean parallelLoading = true;
     private int maxConcurrency = DEFAULT_MAX_CONCURRENCY;
     private long parseTimeoutMs = DEFAULT_PARSE_TIMEOUT_MS;
@@ -134,7 +130,6 @@ public record EpubProcessingPolicy(
       this.maxEntries = base.maxEntries();
       this.maxEntryBytes = base.maxEntryBytes();
       this.maxTotalUncompressedBytes = base.maxTotalUncompressedBytes();
-      this.sanitizeXhtml = base.sanitizeXhtml();
       this.parallelLoading = base.parallelLoading();
       this.maxConcurrency = base.maxConcurrency();
       this.parseTimeoutMs = base.parseTimeoutMs();
@@ -164,11 +159,6 @@ public record EpubProcessingPolicy(
 
     public Builder maxTotalUncompressedBytes(long value) {
       this.maxTotalUncompressedBytes = value;
-      return this;
-    }
-
-    public Builder sanitizeXhtml(boolean value) {
-      this.sanitizeXhtml = value;
       return this;
     }
 
@@ -204,7 +194,6 @@ public record EpubProcessingPolicy(
           maxEntries,
           maxEntryBytes,
           maxTotalUncompressedBytes,
-          sanitizeXhtml,
           parallelLoading,
           maxConcurrency,
           parseTimeoutMs,
