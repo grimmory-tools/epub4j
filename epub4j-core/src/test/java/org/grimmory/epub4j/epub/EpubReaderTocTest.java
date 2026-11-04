@@ -92,7 +92,7 @@ class EpubReaderTocTest {
           zip,
           "content.opf",
           """
-          <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="%s">
+          <package xmlns="http://www.idpf.org/2007/opf" unique-identifier="id" version="@VERSION@">
             <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
               <dc:identifier id="id">test</dc:identifier><dc:title>Fixture</dc:title>
               <dc:language>en</dc:language>
@@ -100,12 +100,13 @@ class EpubReaderTocTest {
             <manifest>
               <item id="ncx" href="toc.ncx" media-type="application/x-dtbncx+xml"/>
               <item id="c" href="chapter.xhtml" media-type="application/xhtml+xml"/>
-              %s
+              @NAV_ITEM@
             </manifest>
             <spine toc="ncx"><itemref idref="c"/></spine>
           </package>
           """
-              .formatted(includeNav ? "3.0" : "2.0", navItem));
+              .replace("@VERSION@", includeNav ? "3.0" : "2.0")
+              .replace("@NAV_ITEM@", navItem));
       addEntry(
           zip,
           "chapter.xhtml",
@@ -136,12 +137,12 @@ class EpubReaderTocTest {
             """
             <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
               <head><title>Navigation</title></head>
-              <body><nav epub:type="%s"><ol>
+              <body><nav epub:type="@NAV_TYPE@"><ol>
                 <li><a href="chapter.xhtml">Preferred NAV label</a></li>
               </ol></nav></body>
             </html>
             """
-                .formatted(unusableNav ? "landmarks" : "toc"));
+                .replace("@NAV_TYPE@", unusableNav ? "landmarks" : "toc"));
       }
     }
     return path;
