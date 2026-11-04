@@ -508,10 +508,17 @@ public class EpubReader {
     // Fall through to NCX regardless to obtain the ncxResource handle.
     boolean navParsed = book.getNavResource() != null && NavDocumentReader.read(book);
 
+    // NCXDocument.read mutates the book, so retain the preferred NAV TOC.
+    var navToc = navParsed ? book.getTableOfContents() : null;
     Resource ncxResource = NCXDocument.read(book, this);
 
-    // If nav parsing already populated the TOC, keep it
-    if (navParsed && book.getTableOfContents().size() > 0) {
+    if (navToc != null && navToc.size() > 0) {
+      book.setTableOfContents(navToc);
+      return ncxResource;
+    }
+
+    // A usable NCX TOC needs no synthetic fallback, even without EPUB3 NAV.
+    if (book.getTableOfContents().size() > 0) {
       return ncxResource;
     }
 
